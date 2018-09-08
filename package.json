@@ -1,0 +1,26 @@
+{
+  "name": "tekwerk",
+  "version": "1.0.0",
+  "description": "tekwerk",
+  "main": "index.js",
+  "scripts": {
+    "dev-server": "cd server && nodemon server.js",
+    "dev-client": "cd client && npm start",
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\""
+  },
+  "author": "Lers",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^3.0.0",
+    "body-parser": "^1.18.3",
+    "body-parser-graphql": "^1.1.0",
+    "express": "^4.16.3",
+    "express-graphql": "^0.6.12",
+    "graphql": "^0.13.2",
+    "graphql-middleware": "^1.6.6",
+    "graphql-yoga": "^1.16.1",
+    "jsonwebtoken": "^8.3.0",
+    "path": "^0.12.7",
+    "prisma-binding": "^2.1.4"
+  }
+}

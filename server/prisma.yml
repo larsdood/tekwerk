@@ -1,0 +1,5 @@
+endpoint: https://eu1.prisma.sh/larsdood-53fd52/tekwerk-db/dev
+datamodel: datamodel.graphql
+hooks:
+  post-deploy:
+    - graphql get-schema -p prisma

@@ -1,0 +1,50 @@
+type Employer {
+  id: ID! @unique
+  email: String! @unique
+  name: String! @unique
+  hashedPassword: String!
+  postings: [Posting!]!
+}
+
+type Candidate {
+  id: ID! @unique
+  email: String! @unique
+  name: String!
+  hashedPassword: String!
+  applications: [Application!]!
+}
+
+type Application {
+  id: ID! @unique
+  posting: Posting!
+  applicationLetter: String
+  applicant: Candidate!
+}
+
+type Posting {
+  id: ID! @unique
+  customId: String! @unique
+  offeredBy: Employer!
+  postingTitle: String!
+  positionTitle: String!
+  employmentType: EmploymentType!
+  status: PostingStatus!
+  description: String
+  requirements: String
+  applications: [Application!]!
+  createdDate: DateTime!
+  expiresAt: DateTime!
+}
+
+enum EmploymentType {
+  FULL_TIME,
+  PART_TIME,
+  INTERNSHIP,
+  CONTRACTOR
+}
+
+enum PostingStatus {
+  ACTIVE,
+  ARCHIVED,
+  UPCOMING
+}

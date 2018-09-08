@@ -1,0 +1,61 @@
+
+
+.landing-image {
+    background: black;
+    background-image:
+  linear-gradient(to left, 
+    rgba(0,0,0,1) 35%, 
+    rgba(0,0,0,0.5) 45%,
+    rgba(0,0,0,0) 55%
+  ), url('../Media/workinggirl2.jpg') !important;
+    background-repeat: no-repeat;
+    background-size: 1200px 900px;
+}
+
+.gigaText {
+  font-size: 2em;
+  line-height: 75px;
+}
+
+.textWrapper {
+  text-align: right;
+  margin-top: 100px;
+}
+
+@media only screen and (max-width: 768px) {
+  .landing-image {
+    background: black;
+    background-image:
+  linear-gradient(to bottom, 
+    rgba(0,0,0,0) 20%, 
+    rgba(0,0,0,0.5) 30%,
+    rgba(0,0,0,1) 45%
+  ), url('../Media/workinggirl2.jpg') !important;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+  .gigaText {
+    margin-top: 10%;
+    font-size: 1.2em;
+    line-height: 50px;
+  }
+  .textWrapper {
+    text-align: center;
+  }
+}
+
+@media only screen and (min-width: 769px) and (max-width: 991px){
+  .landing-image {
+    background-size: 900px 730px;
+  }
+  .gigaText {
+    font-size: 1.5em;
+    line-height: 50px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  .gigaText {
+    font-size: 1.75em;
+  }
+}

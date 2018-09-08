@@ -1,0 +1,22 @@
+# import Employer from '../src/generated/prisma.graphql';
+# import Posting from '../src/generated/prisma.graphql';
+# import PostingStatus from '../src/generated/prisma.graphql';
+
+type Query {
+  employers(name: String): [Employer!]!
+  postings(postingTitle: String): [Posting!]!
+}
+
+type Mutation {
+  signupEmployer(name: String!, email: String!, password: String!): Employer!
+  loginEmployer(name: String!, password: String!): String!
+  createPosting(postingTitle: String!,
+    positionTitle: String!,
+    employmentType: String!,
+    description: String!,
+    requirements: String!,
+    customId: String!,
+    expiresAt: DateTime!,
+    status: PostingStatus): Posting!
+  releasePosting(customId: String!): String!
+}
