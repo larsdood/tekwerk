@@ -20,14 +20,14 @@ class RegisterModal extends Component {
         console.log(nextProps.awaitingResponse);
         console.log(nextProps.successStack)
         console.log(nextProps.failureStack)
-        if (nextProps.failureStack.includes(A.registerEmployer.ROOT)) {
+        if (nextProps.failureStack.includes(A.signupEmployer.ROOT)) {
           this.setState({ awaitingRequest: false });
           console.log('bro, register failed');
         }
       }
     }
     if (this.props.awaitingResponse && nextProps.awaitingResponse) {
-      if (this.props.awaitingResponse.includes(A.registerEmployer.ROOT) && !nextProps.awaitingResponse.includes(A.registerEmployer.ROOT)) {
+      if (this.props.awaitingResponse.includes(A.signupEmployer.ROOT) && !nextProps.awaitingResponse.includes(A.signupEmployer.ROOT)) {
       }
     }
   }
@@ -38,12 +38,15 @@ class RegisterModal extends Component {
 
   submitForm = () => {
     this.setState({ awaitingRequest: true });
-    const { name, email, password } = this.state;
-    this.props.registerEmployer(
-      name,
+    const { firstName, middleNames, lastName, email, password } = this.state;
+    console.log('sign up candidate');
+    this.props.signupCandidate(
+      firstName,
+      middleNames,
+      lastName,
       email,
       password
-    );
+    )
   }
 
   render() {
@@ -53,7 +56,11 @@ class RegisterModal extends Component {
         <Modal.Header content={`Register ${this.props.clientType}`}/>
         <Modal.Content>
           <Form inverted onSubmit={this.submitForm}>
-            <Form.Input name='name' label='Company Name' required onChange={this.onChange} />
+
+            <Form.Group>
+              <Form.Input name='firstName' label='First Name' required onChange={this.onChange} />
+              <Form.Input name='lastName' label='Last name' required onChange={this.onChange} />
+            </Form.Group>
             <Form.Input name='email' label='Email address' required onChange={this.onChange} />
             <Form.Input name='password' type='password' label='Password' required onChange={this.onChange} />
             <Button active={!this.state.awaitingRequest} color='blue' type='submit'>Register</Button> 
@@ -72,7 +79,8 @@ const mapStateToProps = state => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-  registerEmployer: (name, email, password) => { dispatch(A.registerEmployer.request(name, email, password))}
+  signupEmployer: (name, email, password) => { dispatch(A.signupEmployer.request(name, email, password))},
+  signupCandidate: (firstName, middleNames, lastName, email, password) => { dispatch(A.signupCandidate.request(firstName, middleNames, lastName, email, password))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(RegisterModal);

@@ -4,6 +4,8 @@ import { Card, Statistic, Menu, Image, Button, Grid, Header, Responsive, Dropdow
 import * as selectors from '../State/selectors';
 import * as A from '../State/actions';
 
+import TopBar from '../Containers/TopBar';
+
 import LogoHorizontal from '../Media/LogoHorizontal4x.png';
 import NewPostingModal from '../Containers/NewPostingModal';
 import EmployerPostingCard from '../Components/EmployerPostingCard';
@@ -23,10 +25,7 @@ class EmployerDashboard extends Component {
     }
     return (
       <React.Fragment>
-        <Image style={{ width: '200px', height: 'auto', padding: '5px 0px 5px 20px', position: 'absolute' }} src={LogoHorizontal}/>
-        <Menu secondary>
-          <Menu.Item position='right'name="hello"/>
-        </Menu>
+        <TopBar />
         <div style={{ padding: '20px 20px 0px 0px', position: 'absolute', width: '260px', height: '100%', backgroundColor: '#2A9CD8' }}>
           <Header textAlign='center' as='h3' inverted>{this.props.employer.name}</Header>
             <Statistic.Group inverted size='small' widths='2'>
@@ -96,9 +95,6 @@ class EmployerDashboard extends Component {
           </Grid>
         </div>
         Hello
-      
-      
-      
       </React.Fragment>
     )
   }
@@ -114,7 +110,8 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   queryPostings: (count) => dispatch(A.queryPostings.request(count)),
-  releasePosting: (customId) => dispatch(A.releasePosting.request(customId))
+  releasePosting: (customId) => dispatch(A.releasePosting.request(customId)),
+  logout: () => dispatch(A.logout.request()),
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(EmployerDashboard);

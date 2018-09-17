@@ -1,11 +1,11 @@
 # source: https://eu1.prisma.sh/larsdood-53fd52/tekwerk-db/dev
-# timestamp: Wed Sep 05 2018 21:48:58 GMT+0200 (W. Europe Summer Time)
+# timestamp: Sun Sep 09 2018 15:37:42 GMT+0200 (W. Europe Summer Time)
 
 type AggregateApplication {
   count: Int!
 }
 
-type AggregateCandidate {
+type AggregateEducation {
   count: Int!
 }
 
@@ -13,15 +13,36 @@ type AggregateEmployer {
   count: Int!
 }
 
+type AggregateEmploymentProcess {
+  count: Int!
+}
+
+type AggregateMoneyAmount {
+  count: Int!
+}
+
 type AggregatePosting {
+  count: Int!
+}
+
+type AggregateQualification {
+  count: Int!
+}
+
+type AggregateRequirement {
+  count: Int!
+}
+
+type AggregateUser {
   count: Int!
 }
 
 type Application implements Node {
   id: ID!
   posting(where: PostingWhereInput): Posting!
-  applicationLetter: String
-  applicant(where: CandidateWhereInput): Candidate!
+  applicant(where: UserWhereInput): User!
+  applicationLetter: String!
+  status: ApplicationStatus!
 }
 
 """A connection to a list of items."""
@@ -35,9 +56,10 @@ type ApplicationConnection {
 }
 
 input ApplicationCreateInput {
-  applicationLetter: String
+  applicationLetter: String!
+  status: ApplicationStatus!
   posting: PostingCreateOneWithoutApplicationsInput!
-  applicant: CandidateCreateOneWithoutApplicationsInput!
+  applicant: UserCreateOneWithoutApplicationsInput!
 }
 
 input ApplicationCreateManyWithoutApplicantInput {
@@ -51,13 +73,15 @@ input ApplicationCreateManyWithoutPostingInput {
 }
 
 input ApplicationCreateWithoutApplicantInput {
-  applicationLetter: String
+  applicationLetter: String!
+  status: ApplicationStatus!
   posting: PostingCreateOneWithoutApplicationsInput!
 }
 
 input ApplicationCreateWithoutPostingInput {
-  applicationLetter: String
-  applicant: CandidateCreateOneWithoutApplicationsInput!
+  applicationLetter: String!
+  status: ApplicationStatus!
+  applicant: UserCreateOneWithoutApplicationsInput!
 }
 
 """An edge in a connection."""
@@ -74,6 +98,8 @@ enum ApplicationOrderByInput {
   id_DESC
   applicationLetter_ASC
   applicationLetter_DESC
+  status_ASC
+  status_DESC
   updatedAt_ASC
   updatedAt_DESC
   createdAt_ASC
@@ -82,7 +108,14 @@ enum ApplicationOrderByInput {
 
 type ApplicationPreviousValues {
   id: ID!
-  applicationLetter: String
+  applicationLetter: String!
+  status: ApplicationStatus!
+}
+
+enum ApplicationStatus {
+  UNSENDT
+  IN_PROGRESS
+  REJECTED
 }
 
 type ApplicationSubscriptionPayload {
@@ -126,8 +159,9 @@ input ApplicationSubscriptionWhereInput {
 
 input ApplicationUpdateInput {
   applicationLetter: String
+  status: ApplicationStatus
   posting: PostingUpdateOneWithoutApplicationsInput
-  applicant: CandidateUpdateOneWithoutApplicationsInput
+  applicant: UserUpdateOneWithoutApplicationsInput
 }
 
 input ApplicationUpdateManyWithoutApplicantInput {
@@ -150,12 +184,14 @@ input ApplicationUpdateManyWithoutPostingInput {
 
 input ApplicationUpdateWithoutApplicantDataInput {
   applicationLetter: String
+  status: ApplicationStatus
   posting: PostingUpdateOneWithoutApplicationsInput
 }
 
 input ApplicationUpdateWithoutPostingDataInput {
   applicationLetter: String
-  applicant: CandidateUpdateOneWithoutApplicationsInput
+  status: ApplicationStatus
+  applicant: UserUpdateOneWithoutApplicationsInput
 }
 
 input ApplicationUpdateWithWhereUniqueWithoutApplicantInput {
@@ -269,8 +305,18 @@ input ApplicationWhereInput {
 
   """All values not ending with the given string."""
   applicationLetter_not_ends_with: String
+  status: ApplicationStatus
+
+  """All values that are not equal to given value."""
+  status_not: ApplicationStatus
+
+  """All values that are contained in given list."""
+  status_in: [ApplicationStatus!]
+
+  """All values that are not contained in given list."""
+  status_not_in: [ApplicationStatus!]
   posting: PostingWhereInput
-  applicant: CandidateWhereInput
+  applicant: UserWhereInput
 }
 
 input ApplicationWhereUniqueInput {
@@ -282,89 +328,103 @@ type BatchPayload {
   count: Long!
 }
 
-type Candidate implements Node {
-  id: ID!
-  email: String!
-  name: String!
-  hashedPassword: String!
-  applications(where: ApplicationWhereInput, orderBy: ApplicationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Application!]
+scalar DateTime
+
+enum DegreeType {
+  PHD
+  MASTERS
+  BACHELORS
+  PROFESSION
+  OTHER
+}
+
+type Education {
+  schoolName: String!
+  degreeName: String!
+  degreeType: DegreeType!
+  enrolledAt: DateTime!
+  graduatedAt: DateTime!
+  description: String
 }
 
 """A connection to a list of items."""
-type CandidateConnection {
+type EducationConnection {
   """Information to aid in pagination."""
   pageInfo: PageInfo!
 
   """A list of edges."""
-  edges: [CandidateEdge]!
-  aggregate: AggregateCandidate!
+  edges: [EducationEdge]!
+  aggregate: AggregateEducation!
 }
 
-input CandidateCreateInput {
-  email: String!
-  name: String!
-  hashedPassword: String!
-  applications: ApplicationCreateManyWithoutApplicantInput
+input EducationCreateInput {
+  schoolName: String!
+  degreeName: String!
+  degreeType: DegreeType!
+  enrolledAt: DateTime!
+  graduatedAt: DateTime!
+  description: String
 }
 
-input CandidateCreateOneWithoutApplicationsInput {
-  create: CandidateCreateWithoutApplicationsInput
-  connect: CandidateWhereUniqueInput
-}
-
-input CandidateCreateWithoutApplicationsInput {
-  email: String!
-  name: String!
-  hashedPassword: String!
+input EducationCreateManyInput {
+  create: [EducationCreateInput!]
 }
 
 """An edge in a connection."""
-type CandidateEdge {
+type EducationEdge {
   """The item at the end of the edge."""
-  node: Candidate!
+  node: Education!
 
   """A cursor for use in pagination."""
   cursor: String!
 }
 
-enum CandidateOrderByInput {
+enum EducationOrderByInput {
+  schoolName_ASC
+  schoolName_DESC
+  degreeName_ASC
+  degreeName_DESC
+  degreeType_ASC
+  degreeType_DESC
+  enrolledAt_ASC
+  enrolledAt_DESC
+  graduatedAt_ASC
+  graduatedAt_DESC
+  description_ASC
+  description_DESC
   id_ASC
   id_DESC
-  email_ASC
-  email_DESC
-  name_ASC
-  name_DESC
-  hashedPassword_ASC
-  hashedPassword_DESC
   updatedAt_ASC
   updatedAt_DESC
   createdAt_ASC
   createdAt_DESC
 }
 
-type CandidatePreviousValues {
-  id: ID!
-  email: String!
-  name: String!
-  hashedPassword: String!
+type EducationPreviousValues {
+  schoolName: String!
+  degreeName: String!
+  degreeType: DegreeType!
+  enrolledAt: DateTime!
+  graduatedAt: DateTime!
+  description: String
 }
 
-type CandidateSubscriptionPayload {
+type EducationSubscriptionPayload {
   mutation: MutationType!
-  node: Candidate
+  node: Education
   updatedFields: [String!]
-  previousValues: CandidatePreviousValues
+  previousValues: EducationPreviousValues
 }
 
-input CandidateSubscriptionWhereInput {
+input EducationSubscriptionWhereInput {
   """Logical AND on all given filters."""
-  AND: [CandidateSubscriptionWhereInput!]
+  AND: [EducationSubscriptionWhereInput!]
 
   """Logical OR on all given filters."""
-  OR: [CandidateSubscriptionWhereInput!]
+  OR: [EducationSubscriptionWhereInput!]
 
   """Logical NOT on all given filters combined by AND."""
-  NOT: [CandidateSubscriptionWhereInput!]
+  NOT: [EducationSubscriptionWhereInput!]
 
   """
   The subscription event gets dispatched when it's listed in mutation_in
@@ -385,222 +445,220 @@ input CandidateSubscriptionWhereInput {
   The subscription event gets only dispatched when some of the field names included in this list have been updated
   """
   updatedFields_contains_some: [String!]
-  node: CandidateWhereInput
+  node: EducationWhereInput
 }
 
-input CandidateUpdateInput {
-  email: String
-  name: String
-  hashedPassword: String
-  applications: ApplicationUpdateManyWithoutApplicantInput
+input EducationUpdateInput {
+  schoolName: String
+  degreeName: String
+  degreeType: DegreeType
+  enrolledAt: DateTime
+  graduatedAt: DateTime
+  description: String
 }
 
-input CandidateUpdateOneWithoutApplicationsInput {
-  create: CandidateCreateWithoutApplicationsInput
-  connect: CandidateWhereUniqueInput
-  delete: Boolean
-  update: CandidateUpdateWithoutApplicationsDataInput
-  upsert: CandidateUpsertWithoutApplicationsInput
+input EducationUpdateManyInput {
+  create: [EducationCreateInput!]
 }
 
-input CandidateUpdateWithoutApplicationsDataInput {
-  email: String
-  name: String
-  hashedPassword: String
-}
-
-input CandidateUpsertWithoutApplicationsInput {
-  update: CandidateUpdateWithoutApplicationsDataInput!
-  create: CandidateCreateWithoutApplicationsInput!
-}
-
-input CandidateWhereInput {
+input EducationWhereInput {
   """Logical AND on all given filters."""
-  AND: [CandidateWhereInput!]
+  AND: [EducationWhereInput!]
 
   """Logical OR on all given filters."""
-  OR: [CandidateWhereInput!]
+  OR: [EducationWhereInput!]
 
   """Logical NOT on all given filters combined by AND."""
-  NOT: [CandidateWhereInput!]
-  id: ID
+  NOT: [EducationWhereInput!]
+  schoolName: String
 
   """All values that are not equal to given value."""
-  id_not: ID
+  schoolName_not: String
 
   """All values that are contained in given list."""
-  id_in: [ID!]
+  schoolName_in: [String!]
 
   """All values that are not contained in given list."""
-  id_not_in: [ID!]
+  schoolName_not_in: [String!]
 
   """All values less than the given value."""
-  id_lt: ID
+  schoolName_lt: String
 
   """All values less than or equal the given value."""
-  id_lte: ID
+  schoolName_lte: String
 
   """All values greater than the given value."""
-  id_gt: ID
+  schoolName_gt: String
 
   """All values greater than or equal the given value."""
-  id_gte: ID
+  schoolName_gte: String
 
   """All values containing the given string."""
-  id_contains: ID
+  schoolName_contains: String
 
   """All values not containing the given string."""
-  id_not_contains: ID
+  schoolName_not_contains: String
 
   """All values starting with the given string."""
-  id_starts_with: ID
+  schoolName_starts_with: String
 
   """All values not starting with the given string."""
-  id_not_starts_with: ID
+  schoolName_not_starts_with: String
 
   """All values ending with the given string."""
-  id_ends_with: ID
+  schoolName_ends_with: String
 
   """All values not ending with the given string."""
-  id_not_ends_with: ID
-  email: String
+  schoolName_not_ends_with: String
+  degreeName: String
 
   """All values that are not equal to given value."""
-  email_not: String
+  degreeName_not: String
 
   """All values that are contained in given list."""
-  email_in: [String!]
+  degreeName_in: [String!]
 
   """All values that are not contained in given list."""
-  email_not_in: [String!]
+  degreeName_not_in: [String!]
 
   """All values less than the given value."""
-  email_lt: String
+  degreeName_lt: String
 
   """All values less than or equal the given value."""
-  email_lte: String
+  degreeName_lte: String
 
   """All values greater than the given value."""
-  email_gt: String
+  degreeName_gt: String
 
   """All values greater than or equal the given value."""
-  email_gte: String
+  degreeName_gte: String
 
   """All values containing the given string."""
-  email_contains: String
+  degreeName_contains: String
 
   """All values not containing the given string."""
-  email_not_contains: String
+  degreeName_not_contains: String
 
   """All values starting with the given string."""
-  email_starts_with: String
+  degreeName_starts_with: String
 
   """All values not starting with the given string."""
-  email_not_starts_with: String
+  degreeName_not_starts_with: String
 
   """All values ending with the given string."""
-  email_ends_with: String
+  degreeName_ends_with: String
 
   """All values not ending with the given string."""
-  email_not_ends_with: String
-  name: String
+  degreeName_not_ends_with: String
+  degreeType: DegreeType
 
   """All values that are not equal to given value."""
-  name_not: String
+  degreeType_not: DegreeType
 
   """All values that are contained in given list."""
-  name_in: [String!]
+  degreeType_in: [DegreeType!]
 
   """All values that are not contained in given list."""
-  name_not_in: [String!]
-
-  """All values less than the given value."""
-  name_lt: String
-
-  """All values less than or equal the given value."""
-  name_lte: String
-
-  """All values greater than the given value."""
-  name_gt: String
-
-  """All values greater than or equal the given value."""
-  name_gte: String
-
-  """All values containing the given string."""
-  name_contains: String
-
-  """All values not containing the given string."""
-  name_not_contains: String
-
-  """All values starting with the given string."""
-  name_starts_with: String
-
-  """All values not starting with the given string."""
-  name_not_starts_with: String
-
-  """All values ending with the given string."""
-  name_ends_with: String
-
-  """All values not ending with the given string."""
-  name_not_ends_with: String
-  hashedPassword: String
+  degreeType_not_in: [DegreeType!]
+  enrolledAt: DateTime
 
   """All values that are not equal to given value."""
-  hashedPassword_not: String
+  enrolledAt_not: DateTime
 
   """All values that are contained in given list."""
-  hashedPassword_in: [String!]
+  enrolledAt_in: [DateTime!]
 
   """All values that are not contained in given list."""
-  hashedPassword_not_in: [String!]
+  enrolledAt_not_in: [DateTime!]
 
   """All values less than the given value."""
-  hashedPassword_lt: String
+  enrolledAt_lt: DateTime
 
   """All values less than or equal the given value."""
-  hashedPassword_lte: String
+  enrolledAt_lte: DateTime
 
   """All values greater than the given value."""
-  hashedPassword_gt: String
+  enrolledAt_gt: DateTime
 
   """All values greater than or equal the given value."""
-  hashedPassword_gte: String
+  enrolledAt_gte: DateTime
+  graduatedAt: DateTime
+
+  """All values that are not equal to given value."""
+  graduatedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  graduatedAt_in: [DateTime!]
+
+  """All values that are not contained in given list."""
+  graduatedAt_not_in: [DateTime!]
+
+  """All values less than the given value."""
+  graduatedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  graduatedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  graduatedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  graduatedAt_gte: DateTime
+  description: String
+
+  """All values that are not equal to given value."""
+  description_not: String
+
+  """All values that are contained in given list."""
+  description_in: [String!]
+
+  """All values that are not contained in given list."""
+  description_not_in: [String!]
+
+  """All values less than the given value."""
+  description_lt: String
+
+  """All values less than or equal the given value."""
+  description_lte: String
+
+  """All values greater than the given value."""
+  description_gt: String
+
+  """All values greater than or equal the given value."""
+  description_gte: String
 
   """All values containing the given string."""
-  hashedPassword_contains: String
+  description_contains: String
 
   """All values not containing the given string."""
-  hashedPassword_not_contains: String
+  description_not_contains: String
 
   """All values starting with the given string."""
-  hashedPassword_starts_with: String
+  description_starts_with: String
 
   """All values not starting with the given string."""
-  hashedPassword_not_starts_with: String
+  description_not_starts_with: String
 
   """All values ending with the given string."""
-  hashedPassword_ends_with: String
+  description_ends_with: String
 
   """All values not ending with the given string."""
-  hashedPassword_not_ends_with: String
-  applications_every: ApplicationWhereInput
-  applications_some: ApplicationWhereInput
-  applications_none: ApplicationWhereInput
+  description_not_ends_with: String
 }
-
-input CandidateWhereUniqueInput {
-  id: ID
-  email: String
-}
-
-scalar DateTime
 
 type Employer implements Node {
   id: ID!
-  email: String!
-  name: String!
-  hashedPassword: String!
+  contactEmail: String!
+  companyName: String!
+  logoUrl: String
   postings(where: PostingWhereInput, orderBy: PostingOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Posting!]
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User!]
+  processes(where: EmploymentProcessWhereInput, orderBy: EmploymentProcessOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [EmploymentProcess!]
+}
+
+enum EmployerAccessRights {
+  ADMIN
+  EDITOR
 }
 
 """A connection to a list of items."""
@@ -614,10 +672,12 @@ type EmployerConnection {
 }
 
 input EmployerCreateInput {
-  email: String!
-  name: String!
-  hashedPassword: String!
+  contactEmail: String!
+  companyName: String!
+  logoUrl: String
   postings: PostingCreateManyWithoutOfferedByInput
+  users: UserCreateManyWithoutEmployerInput
+  processes: EmploymentProcessCreateManyWithoutEmployerInput
 }
 
 input EmployerCreateOneWithoutPostingsInput {
@@ -625,10 +685,38 @@ input EmployerCreateOneWithoutPostingsInput {
   connect: EmployerWhereUniqueInput
 }
 
+input EmployerCreateOneWithoutProcessesInput {
+  create: EmployerCreateWithoutProcessesInput
+  connect: EmployerWhereUniqueInput
+}
+
+input EmployerCreateOneWithoutUsersInput {
+  create: EmployerCreateWithoutUsersInput
+  connect: EmployerWhereUniqueInput
+}
+
 input EmployerCreateWithoutPostingsInput {
-  email: String!
-  name: String!
-  hashedPassword: String!
+  contactEmail: String!
+  companyName: String!
+  logoUrl: String
+  users: UserCreateManyWithoutEmployerInput
+  processes: EmploymentProcessCreateManyWithoutEmployerInput
+}
+
+input EmployerCreateWithoutProcessesInput {
+  contactEmail: String!
+  companyName: String!
+  logoUrl: String
+  postings: PostingCreateManyWithoutOfferedByInput
+  users: UserCreateManyWithoutEmployerInput
+}
+
+input EmployerCreateWithoutUsersInput {
+  contactEmail: String!
+  companyName: String!
+  logoUrl: String
+  postings: PostingCreateManyWithoutOfferedByInput
+  processes: EmploymentProcessCreateManyWithoutEmployerInput
 }
 
 """An edge in a connection."""
@@ -643,12 +731,12 @@ type EmployerEdge {
 enum EmployerOrderByInput {
   id_ASC
   id_DESC
-  email_ASC
-  email_DESC
-  name_ASC
-  name_DESC
-  hashedPassword_ASC
-  hashedPassword_DESC
+  contactEmail_ASC
+  contactEmail_DESC
+  companyName_ASC
+  companyName_DESC
+  logoUrl_ASC
+  logoUrl_DESC
   updatedAt_ASC
   updatedAt_DESC
   createdAt_ASC
@@ -657,9 +745,9 @@ enum EmployerOrderByInput {
 
 type EmployerPreviousValues {
   id: ID!
-  email: String!
-  name: String!
-  hashedPassword: String!
+  contactEmail: String!
+  companyName: String!
+  logoUrl: String
 }
 
 type EmployerSubscriptionPayload {
@@ -702,10 +790,12 @@ input EmployerSubscriptionWhereInput {
 }
 
 input EmployerUpdateInput {
-  email: String
-  name: String
-  hashedPassword: String
+  contactEmail: String
+  companyName: String
+  logoUrl: String
   postings: PostingUpdateManyWithoutOfferedByInput
+  users: UserUpdateManyWithoutEmployerInput
+  processes: EmploymentProcessUpdateManyWithoutEmployerInput
 }
 
 input EmployerUpdateOneWithoutPostingsInput {
@@ -716,15 +806,60 @@ input EmployerUpdateOneWithoutPostingsInput {
   upsert: EmployerUpsertWithoutPostingsInput
 }
 
+input EmployerUpdateOneWithoutProcessesInput {
+  create: EmployerCreateWithoutProcessesInput
+  connect: EmployerWhereUniqueInput
+  delete: Boolean
+  update: EmployerUpdateWithoutProcessesDataInput
+  upsert: EmployerUpsertWithoutProcessesInput
+}
+
+input EmployerUpdateOneWithoutUsersInput {
+  create: EmployerCreateWithoutUsersInput
+  connect: EmployerWhereUniqueInput
+  disconnect: Boolean
+  delete: Boolean
+  update: EmployerUpdateWithoutUsersDataInput
+  upsert: EmployerUpsertWithoutUsersInput
+}
+
 input EmployerUpdateWithoutPostingsDataInput {
-  email: String
-  name: String
-  hashedPassword: String
+  contactEmail: String
+  companyName: String
+  logoUrl: String
+  users: UserUpdateManyWithoutEmployerInput
+  processes: EmploymentProcessUpdateManyWithoutEmployerInput
+}
+
+input EmployerUpdateWithoutProcessesDataInput {
+  contactEmail: String
+  companyName: String
+  logoUrl: String
+  postings: PostingUpdateManyWithoutOfferedByInput
+  users: UserUpdateManyWithoutEmployerInput
+}
+
+input EmployerUpdateWithoutUsersDataInput {
+  contactEmail: String
+  companyName: String
+  logoUrl: String
+  postings: PostingUpdateManyWithoutOfferedByInput
+  processes: EmploymentProcessUpdateManyWithoutEmployerInput
 }
 
 input EmployerUpsertWithoutPostingsInput {
   update: EmployerUpdateWithoutPostingsDataInput!
   create: EmployerCreateWithoutPostingsInput!
+}
+
+input EmployerUpsertWithoutProcessesInput {
+  update: EmployerUpdateWithoutProcessesDataInput!
+  create: EmployerCreateWithoutProcessesInput!
+}
+
+input EmployerUpsertWithoutUsersInput {
+  update: EmployerUpdateWithoutUsersDataInput!
+  create: EmployerCreateWithoutUsersInput!
 }
 
 input EmployerWhereInput {
@@ -776,135 +911,318 @@ input EmployerWhereInput {
 
   """All values not ending with the given string."""
   id_not_ends_with: ID
-  email: String
+  contactEmail: String
 
   """All values that are not equal to given value."""
-  email_not: String
+  contactEmail_not: String
 
   """All values that are contained in given list."""
-  email_in: [String!]
+  contactEmail_in: [String!]
 
   """All values that are not contained in given list."""
-  email_not_in: [String!]
+  contactEmail_not_in: [String!]
 
   """All values less than the given value."""
-  email_lt: String
+  contactEmail_lt: String
 
   """All values less than or equal the given value."""
-  email_lte: String
+  contactEmail_lte: String
 
   """All values greater than the given value."""
-  email_gt: String
+  contactEmail_gt: String
 
   """All values greater than or equal the given value."""
-  email_gte: String
+  contactEmail_gte: String
 
   """All values containing the given string."""
-  email_contains: String
+  contactEmail_contains: String
 
   """All values not containing the given string."""
-  email_not_contains: String
+  contactEmail_not_contains: String
 
   """All values starting with the given string."""
-  email_starts_with: String
+  contactEmail_starts_with: String
 
   """All values not starting with the given string."""
-  email_not_starts_with: String
+  contactEmail_not_starts_with: String
 
   """All values ending with the given string."""
-  email_ends_with: String
+  contactEmail_ends_with: String
 
   """All values not ending with the given string."""
-  email_not_ends_with: String
-  name: String
+  contactEmail_not_ends_with: String
+  companyName: String
 
   """All values that are not equal to given value."""
-  name_not: String
+  companyName_not: String
 
   """All values that are contained in given list."""
-  name_in: [String!]
+  companyName_in: [String!]
 
   """All values that are not contained in given list."""
-  name_not_in: [String!]
+  companyName_not_in: [String!]
 
   """All values less than the given value."""
-  name_lt: String
+  companyName_lt: String
 
   """All values less than or equal the given value."""
-  name_lte: String
+  companyName_lte: String
 
   """All values greater than the given value."""
-  name_gt: String
+  companyName_gt: String
 
   """All values greater than or equal the given value."""
-  name_gte: String
+  companyName_gte: String
 
   """All values containing the given string."""
-  name_contains: String
+  companyName_contains: String
 
   """All values not containing the given string."""
-  name_not_contains: String
+  companyName_not_contains: String
 
   """All values starting with the given string."""
-  name_starts_with: String
+  companyName_starts_with: String
 
   """All values not starting with the given string."""
-  name_not_starts_with: String
+  companyName_not_starts_with: String
 
   """All values ending with the given string."""
-  name_ends_with: String
+  companyName_ends_with: String
 
   """All values not ending with the given string."""
-  name_not_ends_with: String
-  hashedPassword: String
+  companyName_not_ends_with: String
+  logoUrl: String
 
   """All values that are not equal to given value."""
-  hashedPassword_not: String
+  logoUrl_not: String
 
   """All values that are contained in given list."""
-  hashedPassword_in: [String!]
+  logoUrl_in: [String!]
 
   """All values that are not contained in given list."""
-  hashedPassword_not_in: [String!]
+  logoUrl_not_in: [String!]
 
   """All values less than the given value."""
-  hashedPassword_lt: String
+  logoUrl_lt: String
 
   """All values less than or equal the given value."""
-  hashedPassword_lte: String
+  logoUrl_lte: String
 
   """All values greater than the given value."""
-  hashedPassword_gt: String
+  logoUrl_gt: String
 
   """All values greater than or equal the given value."""
-  hashedPassword_gte: String
+  logoUrl_gte: String
 
   """All values containing the given string."""
-  hashedPassword_contains: String
+  logoUrl_contains: String
 
   """All values not containing the given string."""
-  hashedPassword_not_contains: String
+  logoUrl_not_contains: String
 
   """All values starting with the given string."""
-  hashedPassword_starts_with: String
+  logoUrl_starts_with: String
 
   """All values not starting with the given string."""
-  hashedPassword_not_starts_with: String
+  logoUrl_not_starts_with: String
 
   """All values ending with the given string."""
-  hashedPassword_ends_with: String
+  logoUrl_ends_with: String
 
   """All values not ending with the given string."""
-  hashedPassword_not_ends_with: String
+  logoUrl_not_ends_with: String
   postings_every: PostingWhereInput
   postings_some: PostingWhereInput
   postings_none: PostingWhereInput
+  users_every: UserWhereInput
+  users_some: UserWhereInput
+  users_none: UserWhereInput
+  processes_every: EmploymentProcessWhereInput
+  processes_some: EmploymentProcessWhereInput
+  processes_none: EmploymentProcessWhereInput
 }
 
 input EmployerWhereUniqueInput {
   id: ID
-  email: String
-  name: String
+  contactEmail: String
+  companyName: String
+}
+
+type EmploymentProcess implements Node {
+  id: ID!
+  candidate(where: UserWhereInput): User!
+  employer(where: EmployerWhereInput): Employer!
+}
+
+"""A connection to a list of items."""
+type EmploymentProcessConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [EmploymentProcessEdge]!
+  aggregate: AggregateEmploymentProcess!
+}
+
+input EmploymentProcessCreateInput {
+  candidate: UserCreateOneInput!
+  employer: EmployerCreateOneWithoutProcessesInput!
+}
+
+input EmploymentProcessCreateManyWithoutEmployerInput {
+  create: [EmploymentProcessCreateWithoutEmployerInput!]
+  connect: [EmploymentProcessWhereUniqueInput!]
+}
+
+input EmploymentProcessCreateWithoutEmployerInput {
+  candidate: UserCreateOneInput!
+}
+
+"""An edge in a connection."""
+type EmploymentProcessEdge {
+  """The item at the end of the edge."""
+  node: EmploymentProcess!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum EmploymentProcessOrderByInput {
+  id_ASC
+  id_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type EmploymentProcessPreviousValues {
+  id: ID!
+}
+
+type EmploymentProcessSubscriptionPayload {
+  mutation: MutationType!
+  node: EmploymentProcess
+  updatedFields: [String!]
+  previousValues: EmploymentProcessPreviousValues
+}
+
+input EmploymentProcessSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [EmploymentProcessSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [EmploymentProcessSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [EmploymentProcessSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: EmploymentProcessWhereInput
+}
+
+input EmploymentProcessUpdateInput {
+  candidate: UserUpdateOneInput
+  employer: EmployerUpdateOneWithoutProcessesInput
+}
+
+input EmploymentProcessUpdateManyWithoutEmployerInput {
+  create: [EmploymentProcessCreateWithoutEmployerInput!]
+  connect: [EmploymentProcessWhereUniqueInput!]
+  disconnect: [EmploymentProcessWhereUniqueInput!]
+  delete: [EmploymentProcessWhereUniqueInput!]
+  update: [EmploymentProcessUpdateWithWhereUniqueWithoutEmployerInput!]
+  upsert: [EmploymentProcessUpsertWithWhereUniqueWithoutEmployerInput!]
+}
+
+input EmploymentProcessUpdateWithoutEmployerDataInput {
+  candidate: UserUpdateOneInput
+}
+
+input EmploymentProcessUpdateWithWhereUniqueWithoutEmployerInput {
+  where: EmploymentProcessWhereUniqueInput!
+  data: EmploymentProcessUpdateWithoutEmployerDataInput!
+}
+
+input EmploymentProcessUpsertWithWhereUniqueWithoutEmployerInput {
+  where: EmploymentProcessWhereUniqueInput!
+  update: EmploymentProcessUpdateWithoutEmployerDataInput!
+  create: EmploymentProcessCreateWithoutEmployerInput!
+}
+
+input EmploymentProcessWhereInput {
+  """Logical AND on all given filters."""
+  AND: [EmploymentProcessWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [EmploymentProcessWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [EmploymentProcessWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  candidate: UserWhereInput
+  employer: EmployerWhereInput
+}
+
+input EmploymentProcessWhereUniqueInput {
+  id: ID
 }
 
 enum EmploymentType {
@@ -914,37 +1232,248 @@ enum EmploymentType {
   CONTRACTOR
 }
 
+enum ExpertiseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
 """
 The `Long` scalar type represents non-fractional signed whole numeric values.
 Long can represent values between -(2^63) and 2^63 - 1.
 """
 scalar Long
 
+type MoneyAmount {
+  currencyCode: String!
+  amount: Int!
+}
+
+"""A connection to a list of items."""
+type MoneyAmountConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [MoneyAmountEdge]!
+  aggregate: AggregateMoneyAmount!
+}
+
+input MoneyAmountCreateInput {
+  currencyCode: String!
+  amount: Int!
+}
+
+input MoneyAmountCreateOneInput {
+  create: MoneyAmountCreateInput
+}
+
+"""An edge in a connection."""
+type MoneyAmountEdge {
+  """The item at the end of the edge."""
+  node: MoneyAmount!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum MoneyAmountOrderByInput {
+  currencyCode_ASC
+  currencyCode_DESC
+  amount_ASC
+  amount_DESC
+  id_ASC
+  id_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type MoneyAmountPreviousValues {
+  currencyCode: String!
+  amount: Int!
+}
+
+type MoneyAmountSubscriptionPayload {
+  mutation: MutationType!
+  node: MoneyAmount
+  updatedFields: [String!]
+  previousValues: MoneyAmountPreviousValues
+}
+
+input MoneyAmountSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [MoneyAmountSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [MoneyAmountSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [MoneyAmountSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: MoneyAmountWhereInput
+}
+
+input MoneyAmountUpdateDataInput {
+  currencyCode: String
+  amount: Int
+}
+
+input MoneyAmountUpdateInput {
+  currencyCode: String
+  amount: Int
+}
+
+input MoneyAmountUpdateOneInput {
+  create: MoneyAmountCreateInput
+  disconnect: Boolean
+  delete: Boolean
+  update: MoneyAmountUpdateDataInput
+  upsert: MoneyAmountUpsertNestedInput
+}
+
+input MoneyAmountUpsertNestedInput {
+  update: MoneyAmountUpdateDataInput!
+  create: MoneyAmountCreateInput!
+}
+
+input MoneyAmountWhereInput {
+  """Logical AND on all given filters."""
+  AND: [MoneyAmountWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [MoneyAmountWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [MoneyAmountWhereInput!]
+  currencyCode: String
+
+  """All values that are not equal to given value."""
+  currencyCode_not: String
+
+  """All values that are contained in given list."""
+  currencyCode_in: [String!]
+
+  """All values that are not contained in given list."""
+  currencyCode_not_in: [String!]
+
+  """All values less than the given value."""
+  currencyCode_lt: String
+
+  """All values less than or equal the given value."""
+  currencyCode_lte: String
+
+  """All values greater than the given value."""
+  currencyCode_gt: String
+
+  """All values greater than or equal the given value."""
+  currencyCode_gte: String
+
+  """All values containing the given string."""
+  currencyCode_contains: String
+
+  """All values not containing the given string."""
+  currencyCode_not_contains: String
+
+  """All values starting with the given string."""
+  currencyCode_starts_with: String
+
+  """All values not starting with the given string."""
+  currencyCode_not_starts_with: String
+
+  """All values ending with the given string."""
+  currencyCode_ends_with: String
+
+  """All values not ending with the given string."""
+  currencyCode_not_ends_with: String
+  amount: Int
+
+  """All values that are not equal to given value."""
+  amount_not: Int
+
+  """All values that are contained in given list."""
+  amount_in: [Int!]
+
+  """All values that are not contained in given list."""
+  amount_not_in: [Int!]
+
+  """All values less than the given value."""
+  amount_lt: Int
+
+  """All values less than or equal the given value."""
+  amount_lte: Int
+
+  """All values greater than the given value."""
+  amount_gt: Int
+
+  """All values greater than or equal the given value."""
+  amount_gte: Int
+}
+
 type Mutation {
   createEmployer(data: EmployerCreateInput!): Employer!
-  createCandidate(data: CandidateCreateInput!): Candidate!
   createApplication(data: ApplicationCreateInput!): Application!
+  createEmploymentProcess(data: EmploymentProcessCreateInput!): EmploymentProcess!
   createPosting(data: PostingCreateInput!): Posting!
+  createQualification(data: QualificationCreateInput!): Qualification!
+  createEducation(data: EducationCreateInput!): Education!
+  createRequirement(data: RequirementCreateInput!): Requirement!
+  createMoneyAmount(data: MoneyAmountCreateInput!): MoneyAmount!
+  createUser(data: UserCreateInput!): User!
   updateEmployer(data: EmployerUpdateInput!, where: EmployerWhereUniqueInput!): Employer
-  updateCandidate(data: CandidateUpdateInput!, where: CandidateWhereUniqueInput!): Candidate
   updateApplication(data: ApplicationUpdateInput!, where: ApplicationWhereUniqueInput!): Application
+  updateEmploymentProcess(data: EmploymentProcessUpdateInput!, where: EmploymentProcessWhereUniqueInput!): EmploymentProcess
   updatePosting(data: PostingUpdateInput!, where: PostingWhereUniqueInput!): Posting
+  updateUser(data: UserUpdateInput!, where: UserWhereUniqueInput!): User
   deleteEmployer(where: EmployerWhereUniqueInput!): Employer
-  deleteCandidate(where: CandidateWhereUniqueInput!): Candidate
   deleteApplication(where: ApplicationWhereUniqueInput!): Application
+  deleteEmploymentProcess(where: EmploymentProcessWhereUniqueInput!): EmploymentProcess
   deletePosting(where: PostingWhereUniqueInput!): Posting
+  deleteUser(where: UserWhereUniqueInput!): User
   upsertEmployer(where: EmployerWhereUniqueInput!, create: EmployerCreateInput!, update: EmployerUpdateInput!): Employer!
-  upsertCandidate(where: CandidateWhereUniqueInput!, create: CandidateCreateInput!, update: CandidateUpdateInput!): Candidate!
   upsertApplication(where: ApplicationWhereUniqueInput!, create: ApplicationCreateInput!, update: ApplicationUpdateInput!): Application!
+  upsertEmploymentProcess(where: EmploymentProcessWhereUniqueInput!, create: EmploymentProcessCreateInput!, update: EmploymentProcessUpdateInput!): EmploymentProcess!
   upsertPosting(where: PostingWhereUniqueInput!, create: PostingCreateInput!, update: PostingUpdateInput!): Posting!
+  upsertUser(where: UserWhereUniqueInput!, create: UserCreateInput!, update: UserUpdateInput!): User!
   updateManyEmployers(data: EmployerUpdateInput!, where: EmployerWhereInput): BatchPayload!
-  updateManyCandidates(data: CandidateUpdateInput!, where: CandidateWhereInput): BatchPayload!
   updateManyApplications(data: ApplicationUpdateInput!, where: ApplicationWhereInput): BatchPayload!
+  updateManyEmploymentProcesses(data: EmploymentProcessUpdateInput!, where: EmploymentProcessWhereInput): BatchPayload!
   updateManyPostings(data: PostingUpdateInput!, where: PostingWhereInput): BatchPayload!
+  updateManyQualifications(data: QualificationUpdateInput!, where: QualificationWhereInput): BatchPayload!
+  updateManyEducations(data: EducationUpdateInput!, where: EducationWhereInput): BatchPayload!
+  updateManyRequirements(data: RequirementUpdateInput!, where: RequirementWhereInput): BatchPayload!
+  updateManyMoneyAmounts(data: MoneyAmountUpdateInput!, where: MoneyAmountWhereInput): BatchPayload!
+  updateManyUsers(data: UserUpdateInput!, where: UserWhereInput): BatchPayload!
   deleteManyEmployers(where: EmployerWhereInput): BatchPayload!
-  deleteManyCandidates(where: CandidateWhereInput): BatchPayload!
   deleteManyApplications(where: ApplicationWhereInput): BatchPayload!
+  deleteManyEmploymentProcesses(where: EmploymentProcessWhereInput): BatchPayload!
   deleteManyPostings(where: PostingWhereInput): BatchPayload!
+  deleteManyQualifications(where: QualificationWhereInput): BatchPayload!
+  deleteManyEducations(where: EducationWhereInput): BatchPayload!
+  deleteManyRequirements(where: RequirementWhereInput): BatchPayload!
+  deleteManyMoneyAmounts(where: MoneyAmountWhereInput): BatchPayload!
+  deleteManyUsers(where: UserWhereInput): BatchPayload!
 }
 
 enum MutationType {
@@ -983,10 +1512,13 @@ type Posting implements Node {
   employmentType: EmploymentType!
   status: PostingStatus!
   description: String
-  requirements: String
+  requirements(where: RequirementWhereInput, orderBy: RequirementOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Requirement!]
+  niceToHave: [String!]!
   applications(where: ApplicationWhereInput, orderBy: ApplicationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Application!]
   createdDate: DateTime!
   expiresAt: DateTime!
+  minimumSalaryOffer(where: MoneyAmountWhereInput): MoneyAmount
+  maximumSalaryOffer(where: MoneyAmountWhereInput): MoneyAmount
 }
 
 """A connection to a list of items."""
@@ -1006,16 +1538,23 @@ input PostingCreateInput {
   employmentType: EmploymentType!
   status: PostingStatus!
   description: String
-  requirements: String
   createdDate: DateTime!
   expiresAt: DateTime!
+  niceToHave: PostingCreateniceToHaveInput
   offeredBy: EmployerCreateOneWithoutPostingsInput!
+  requirements: RequirementCreateManyInput
   applications: ApplicationCreateManyWithoutPostingInput
+  minimumSalaryOffer: MoneyAmountCreateOneInput
+  maximumSalaryOffer: MoneyAmountCreateOneInput
 }
 
 input PostingCreateManyWithoutOfferedByInput {
   create: [PostingCreateWithoutOfferedByInput!]
   connect: [PostingWhereUniqueInput!]
+}
+
+input PostingCreateniceToHaveInput {
+  set: [String!]
 }
 
 input PostingCreateOneWithoutApplicationsInput {
@@ -1030,10 +1569,13 @@ input PostingCreateWithoutApplicationsInput {
   employmentType: EmploymentType!
   status: PostingStatus!
   description: String
-  requirements: String
   createdDate: DateTime!
   expiresAt: DateTime!
+  niceToHave: PostingCreateniceToHaveInput
   offeredBy: EmployerCreateOneWithoutPostingsInput!
+  requirements: RequirementCreateManyInput
+  minimumSalaryOffer: MoneyAmountCreateOneInput
+  maximumSalaryOffer: MoneyAmountCreateOneInput
 }
 
 input PostingCreateWithoutOfferedByInput {
@@ -1043,10 +1585,13 @@ input PostingCreateWithoutOfferedByInput {
   employmentType: EmploymentType!
   status: PostingStatus!
   description: String
-  requirements: String
   createdDate: DateTime!
   expiresAt: DateTime!
+  niceToHave: PostingCreateniceToHaveInput
+  requirements: RequirementCreateManyInput
   applications: ApplicationCreateManyWithoutPostingInput
+  minimumSalaryOffer: MoneyAmountCreateOneInput
+  maximumSalaryOffer: MoneyAmountCreateOneInput
 }
 
 """An edge in a connection."""
@@ -1073,8 +1618,6 @@ enum PostingOrderByInput {
   status_DESC
   description_ASC
   description_DESC
-  requirements_ASC
-  requirements_DESC
   createdDate_ASC
   createdDate_DESC
   expiresAt_ASC
@@ -1093,7 +1636,7 @@ type PostingPreviousValues {
   employmentType: EmploymentType!
   status: PostingStatus!
   description: String
-  requirements: String
+  niceToHave: [String!]!
   createdDate: DateTime!
   expiresAt: DateTime!
 }
@@ -1150,11 +1693,14 @@ input PostingUpdateInput {
   employmentType: EmploymentType
   status: PostingStatus
   description: String
-  requirements: String
   createdDate: DateTime
   expiresAt: DateTime
+  niceToHave: PostingUpdateniceToHaveInput
   offeredBy: EmployerUpdateOneWithoutPostingsInput
+  requirements: RequirementUpdateManyInput
   applications: ApplicationUpdateManyWithoutPostingInput
+  minimumSalaryOffer: MoneyAmountUpdateOneInput
+  maximumSalaryOffer: MoneyAmountUpdateOneInput
 }
 
 input PostingUpdateManyWithoutOfferedByInput {
@@ -1164,6 +1710,10 @@ input PostingUpdateManyWithoutOfferedByInput {
   delete: [PostingWhereUniqueInput!]
   update: [PostingUpdateWithWhereUniqueWithoutOfferedByInput!]
   upsert: [PostingUpsertWithWhereUniqueWithoutOfferedByInput!]
+}
+
+input PostingUpdateniceToHaveInput {
+  set: [String!]
 }
 
 input PostingUpdateOneWithoutApplicationsInput {
@@ -1181,10 +1731,13 @@ input PostingUpdateWithoutApplicationsDataInput {
   employmentType: EmploymentType
   status: PostingStatus
   description: String
-  requirements: String
   createdDate: DateTime
   expiresAt: DateTime
+  niceToHave: PostingUpdateniceToHaveInput
   offeredBy: EmployerUpdateOneWithoutPostingsInput
+  requirements: RequirementUpdateManyInput
+  minimumSalaryOffer: MoneyAmountUpdateOneInput
+  maximumSalaryOffer: MoneyAmountUpdateOneInput
 }
 
 input PostingUpdateWithoutOfferedByDataInput {
@@ -1194,10 +1747,13 @@ input PostingUpdateWithoutOfferedByDataInput {
   employmentType: EmploymentType
   status: PostingStatus
   description: String
-  requirements: String
   createdDate: DateTime
   expiresAt: DateTime
+  niceToHave: PostingUpdateniceToHaveInput
+  requirements: RequirementUpdateManyInput
   applications: ApplicationUpdateManyWithoutPostingInput
+  minimumSalaryOffer: MoneyAmountUpdateOneInput
+  maximumSalaryOffer: MoneyAmountUpdateOneInput
 }
 
 input PostingUpdateWithWhereUniqueWithoutOfferedByInput {
@@ -1445,46 +2001,6 @@ input PostingWhereInput {
 
   """All values not ending with the given string."""
   description_not_ends_with: String
-  requirements: String
-
-  """All values that are not equal to given value."""
-  requirements_not: String
-
-  """All values that are contained in given list."""
-  requirements_in: [String!]
-
-  """All values that are not contained in given list."""
-  requirements_not_in: [String!]
-
-  """All values less than the given value."""
-  requirements_lt: String
-
-  """All values less than or equal the given value."""
-  requirements_lte: String
-
-  """All values greater than the given value."""
-  requirements_gt: String
-
-  """All values greater than or equal the given value."""
-  requirements_gte: String
-
-  """All values containing the given string."""
-  requirements_contains: String
-
-  """All values not containing the given string."""
-  requirements_not_contains: String
-
-  """All values starting with the given string."""
-  requirements_starts_with: String
-
-  """All values not starting with the given string."""
-  requirements_not_starts_with: String
-
-  """All values ending with the given string."""
-  requirements_ends_with: String
-
-  """All values not ending with the given string."""
-  requirements_not_ends_with: String
   createdDate: DateTime
 
   """All values that are not equal to given value."""
@@ -1530,9 +2046,14 @@ input PostingWhereInput {
   """All values greater than or equal the given value."""
   expiresAt_gte: DateTime
   offeredBy: EmployerWhereInput
+  requirements_every: RequirementWhereInput
+  requirements_some: RequirementWhereInput
+  requirements_none: RequirementWhereInput
   applications_every: ApplicationWhereInput
   applications_some: ApplicationWhereInput
   applications_none: ApplicationWhereInput
+  minimumSalaryOffer: MoneyAmountWhereInput
+  maximumSalaryOffer: MoneyAmountWhereInput
 }
 
 input PostingWhereUniqueInput {
@@ -1540,19 +2061,210 @@ input PostingWhereUniqueInput {
   customId: String
 }
 
+type Qualification {
+  field: String!
+  expertise: ExpertiseLevel!
+  yearsOfExperience: Float!
+}
+
+"""A connection to a list of items."""
+type QualificationConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [QualificationEdge]!
+  aggregate: AggregateQualification!
+}
+
+input QualificationCreateInput {
+  field: String!
+  expertise: ExpertiseLevel!
+  yearsOfExperience: Float!
+}
+
+"""An edge in a connection."""
+type QualificationEdge {
+  """The item at the end of the edge."""
+  node: Qualification!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum QualificationOrderByInput {
+  field_ASC
+  field_DESC
+  expertise_ASC
+  expertise_DESC
+  yearsOfExperience_ASC
+  yearsOfExperience_DESC
+  id_ASC
+  id_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type QualificationPreviousValues {
+  field: String!
+  expertise: ExpertiseLevel!
+  yearsOfExperience: Float!
+}
+
+type QualificationSubscriptionPayload {
+  mutation: MutationType!
+  node: Qualification
+  updatedFields: [String!]
+  previousValues: QualificationPreviousValues
+}
+
+input QualificationSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [QualificationSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [QualificationSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [QualificationSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: QualificationWhereInput
+}
+
+input QualificationUpdateInput {
+  field: String
+  expertise: ExpertiseLevel
+  yearsOfExperience: Float
+}
+
+input QualificationWhereInput {
+  """Logical AND on all given filters."""
+  AND: [QualificationWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [QualificationWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [QualificationWhereInput!]
+  field: String
+
+  """All values that are not equal to given value."""
+  field_not: String
+
+  """All values that are contained in given list."""
+  field_in: [String!]
+
+  """All values that are not contained in given list."""
+  field_not_in: [String!]
+
+  """All values less than the given value."""
+  field_lt: String
+
+  """All values less than or equal the given value."""
+  field_lte: String
+
+  """All values greater than the given value."""
+  field_gt: String
+
+  """All values greater than or equal the given value."""
+  field_gte: String
+
+  """All values containing the given string."""
+  field_contains: String
+
+  """All values not containing the given string."""
+  field_not_contains: String
+
+  """All values starting with the given string."""
+  field_starts_with: String
+
+  """All values not starting with the given string."""
+  field_not_starts_with: String
+
+  """All values ending with the given string."""
+  field_ends_with: String
+
+  """All values not ending with the given string."""
+  field_not_ends_with: String
+  expertise: ExpertiseLevel
+
+  """All values that are not equal to given value."""
+  expertise_not: ExpertiseLevel
+
+  """All values that are contained in given list."""
+  expertise_in: [ExpertiseLevel!]
+
+  """All values that are not contained in given list."""
+  expertise_not_in: [ExpertiseLevel!]
+  yearsOfExperience: Float
+
+  """All values that are not equal to given value."""
+  yearsOfExperience_not: Float
+
+  """All values that are contained in given list."""
+  yearsOfExperience_in: [Float!]
+
+  """All values that are not contained in given list."""
+  yearsOfExperience_not_in: [Float!]
+
+  """All values less than the given value."""
+  yearsOfExperience_lt: Float
+
+  """All values less than or equal the given value."""
+  yearsOfExperience_lte: Float
+
+  """All values greater than the given value."""
+  yearsOfExperience_gt: Float
+
+  """All values greater than or equal the given value."""
+  yearsOfExperience_gte: Float
+}
+
 type Query {
   employers(where: EmployerWhereInput, orderBy: EmployerOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Employer]!
-  candidates(where: CandidateWhereInput, orderBy: CandidateOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Candidate]!
   applications(where: ApplicationWhereInput, orderBy: ApplicationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Application]!
+  employmentProcesses(where: EmploymentProcessWhereInput, orderBy: EmploymentProcessOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [EmploymentProcess]!
   postings(where: PostingWhereInput, orderBy: PostingOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Posting]!
+  qualifications(where: QualificationWhereInput, orderBy: QualificationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Qualification]!
+  educations(where: EducationWhereInput, orderBy: EducationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Education]!
+  requirements(where: RequirementWhereInput, orderBy: RequirementOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Requirement]!
+  moneyAmounts(where: MoneyAmountWhereInput, orderBy: MoneyAmountOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [MoneyAmount]!
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
   employer(where: EmployerWhereUniqueInput!): Employer
-  candidate(where: CandidateWhereUniqueInput!): Candidate
   application(where: ApplicationWhereUniqueInput!): Application
+  employmentProcess(where: EmploymentProcessWhereUniqueInput!): EmploymentProcess
   posting(where: PostingWhereUniqueInput!): Posting
+  user(where: UserWhereUniqueInput!): User
   employersConnection(where: EmployerWhereInput, orderBy: EmployerOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): EmployerConnection!
-  candidatesConnection(where: CandidateWhereInput, orderBy: CandidateOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): CandidateConnection!
   applicationsConnection(where: ApplicationWhereInput, orderBy: ApplicationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): ApplicationConnection!
+  employmentProcessesConnection(where: EmploymentProcessWhereInput, orderBy: EmploymentProcessOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): EmploymentProcessConnection!
   postingsConnection(where: PostingWhereInput, orderBy: PostingOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): PostingConnection!
+  qualificationsConnection(where: QualificationWhereInput, orderBy: QualificationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): QualificationConnection!
+  educationsConnection(where: EducationWhereInput, orderBy: EducationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): EducationConnection!
+  requirementsConnection(where: RequirementWhereInput, orderBy: RequirementOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): RequirementConnection!
+  moneyAmountsConnection(where: MoneyAmountWhereInput, orderBy: MoneyAmountOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): MoneyAmountConnection!
+  usersConnection(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): UserConnection!
 
   """Fetches an object given its ID"""
   node(
@@ -1561,9 +2273,710 @@ type Query {
   ): Node
 }
 
+type Requirement {
+  field: String!
+  expertise: ExpertiseLevel
+  yearsOfExperience: Float
+}
+
+"""A connection to a list of items."""
+type RequirementConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [RequirementEdge]!
+  aggregate: AggregateRequirement!
+}
+
+input RequirementCreateInput {
+  field: String!
+  expertise: ExpertiseLevel
+  yearsOfExperience: Float
+}
+
+input RequirementCreateManyInput {
+  create: [RequirementCreateInput!]
+}
+
+"""An edge in a connection."""
+type RequirementEdge {
+  """The item at the end of the edge."""
+  node: Requirement!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum RequirementOrderByInput {
+  field_ASC
+  field_DESC
+  expertise_ASC
+  expertise_DESC
+  yearsOfExperience_ASC
+  yearsOfExperience_DESC
+  id_ASC
+  id_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type RequirementPreviousValues {
+  field: String!
+  expertise: ExpertiseLevel
+  yearsOfExperience: Float
+}
+
+type RequirementSubscriptionPayload {
+  mutation: MutationType!
+  node: Requirement
+  updatedFields: [String!]
+  previousValues: RequirementPreviousValues
+}
+
+input RequirementSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [RequirementSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [RequirementSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [RequirementSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: RequirementWhereInput
+}
+
+input RequirementUpdateInput {
+  field: String
+  expertise: ExpertiseLevel
+  yearsOfExperience: Float
+}
+
+input RequirementUpdateManyInput {
+  create: [RequirementCreateInput!]
+}
+
+input RequirementWhereInput {
+  """Logical AND on all given filters."""
+  AND: [RequirementWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [RequirementWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [RequirementWhereInput!]
+  field: String
+
+  """All values that are not equal to given value."""
+  field_not: String
+
+  """All values that are contained in given list."""
+  field_in: [String!]
+
+  """All values that are not contained in given list."""
+  field_not_in: [String!]
+
+  """All values less than the given value."""
+  field_lt: String
+
+  """All values less than or equal the given value."""
+  field_lte: String
+
+  """All values greater than the given value."""
+  field_gt: String
+
+  """All values greater than or equal the given value."""
+  field_gte: String
+
+  """All values containing the given string."""
+  field_contains: String
+
+  """All values not containing the given string."""
+  field_not_contains: String
+
+  """All values starting with the given string."""
+  field_starts_with: String
+
+  """All values not starting with the given string."""
+  field_not_starts_with: String
+
+  """All values ending with the given string."""
+  field_ends_with: String
+
+  """All values not ending with the given string."""
+  field_not_ends_with: String
+  expertise: ExpertiseLevel
+
+  """All values that are not equal to given value."""
+  expertise_not: ExpertiseLevel
+
+  """All values that are contained in given list."""
+  expertise_in: [ExpertiseLevel!]
+
+  """All values that are not contained in given list."""
+  expertise_not_in: [ExpertiseLevel!]
+  yearsOfExperience: Float
+
+  """All values that are not equal to given value."""
+  yearsOfExperience_not: Float
+
+  """All values that are contained in given list."""
+  yearsOfExperience_in: [Float!]
+
+  """All values that are not contained in given list."""
+  yearsOfExperience_not_in: [Float!]
+
+  """All values less than the given value."""
+  yearsOfExperience_lt: Float
+
+  """All values less than or equal the given value."""
+  yearsOfExperience_lte: Float
+
+  """All values greater than the given value."""
+  yearsOfExperience_gt: Float
+
+  """All values greater than or equal the given value."""
+  yearsOfExperience_gte: Float
+}
+
 type Subscription {
   employer(where: EmployerSubscriptionWhereInput): EmployerSubscriptionPayload
-  candidate(where: CandidateSubscriptionWhereInput): CandidateSubscriptionPayload
   application(where: ApplicationSubscriptionWhereInput): ApplicationSubscriptionPayload
+  employmentProcess(where: EmploymentProcessSubscriptionWhereInput): EmploymentProcessSubscriptionPayload
   posting(where: PostingSubscriptionWhereInput): PostingSubscriptionPayload
+  qualification(where: QualificationSubscriptionWhereInput): QualificationSubscriptionPayload
+  education(where: EducationSubscriptionWhereInput): EducationSubscriptionPayload
+  requirement(where: RequirementSubscriptionWhereInput): RequirementSubscriptionPayload
+  moneyAmount(where: MoneyAmountSubscriptionWhereInput): MoneyAmountSubscriptionPayload
+  user(where: UserSubscriptionWhereInput): UserSubscriptionPayload
+}
+
+type User implements Node {
+  id: ID!
+  email: String!
+  firstName: String!
+  middleNames: [String!]!
+  lastName: String!
+  hashedPassword: String!
+  education(where: EducationWhereInput, orderBy: EducationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Education!]
+  userType: UserType!
+  employer(where: EmployerWhereInput): Employer
+  employerAccessRights: EmployerAccessRights
+  applications(where: ApplicationWhereInput, orderBy: ApplicationOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Application!]
+}
+
+"""A connection to a list of items."""
+type UserConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [UserEdge]!
+  aggregate: AggregateUser!
+}
+
+input UserCreateInput {
+  email: String!
+  firstName: String!
+  lastName: String!
+  hashedPassword: String!
+  userType: UserType!
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserCreatemiddleNamesInput
+  education: EducationCreateManyInput
+  employer: EmployerCreateOneWithoutUsersInput
+  applications: ApplicationCreateManyWithoutApplicantInput
+}
+
+input UserCreateManyWithoutEmployerInput {
+  create: [UserCreateWithoutEmployerInput!]
+  connect: [UserWhereUniqueInput!]
+}
+
+input UserCreatemiddleNamesInput {
+  set: [String!]
+}
+
+input UserCreateOneInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateOneWithoutApplicationsInput {
+  create: UserCreateWithoutApplicationsInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateWithoutApplicationsInput {
+  email: String!
+  firstName: String!
+  lastName: String!
+  hashedPassword: String!
+  userType: UserType!
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserCreatemiddleNamesInput
+  education: EducationCreateManyInput
+  employer: EmployerCreateOneWithoutUsersInput
+}
+
+input UserCreateWithoutEmployerInput {
+  email: String!
+  firstName: String!
+  lastName: String!
+  hashedPassword: String!
+  userType: UserType!
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserCreatemiddleNamesInput
+  education: EducationCreateManyInput
+  applications: ApplicationCreateManyWithoutApplicantInput
+}
+
+"""An edge in a connection."""
+type UserEdge {
+  """The item at the end of the edge."""
+  node: User!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum UserOrderByInput {
+  id_ASC
+  id_DESC
+  email_ASC
+  email_DESC
+  firstName_ASC
+  firstName_DESC
+  lastName_ASC
+  lastName_DESC
+  hashedPassword_ASC
+  hashedPassword_DESC
+  userType_ASC
+  userType_DESC
+  employerAccessRights_ASC
+  employerAccessRights_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type UserPreviousValues {
+  id: ID!
+  email: String!
+  firstName: String!
+  middleNames: [String!]!
+  lastName: String!
+  hashedPassword: String!
+  userType: UserType!
+  employerAccessRights: EmployerAccessRights
+}
+
+type UserSubscriptionPayload {
+  mutation: MutationType!
+  node: User
+  updatedFields: [String!]
+  previousValues: UserPreviousValues
+}
+
+input UserSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [UserSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [UserSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [UserSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: UserWhereInput
+}
+
+enum UserType {
+  CANDIDATE
+  EMPLOYER
+}
+
+input UserUpdateDataInput {
+  email: String
+  firstName: String
+  lastName: String
+  hashedPassword: String
+  userType: UserType
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserUpdatemiddleNamesInput
+  education: EducationUpdateManyInput
+  employer: EmployerUpdateOneWithoutUsersInput
+  applications: ApplicationUpdateManyWithoutApplicantInput
+}
+
+input UserUpdateInput {
+  email: String
+  firstName: String
+  lastName: String
+  hashedPassword: String
+  userType: UserType
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserUpdatemiddleNamesInput
+  education: EducationUpdateManyInput
+  employer: EmployerUpdateOneWithoutUsersInput
+  applications: ApplicationUpdateManyWithoutApplicantInput
+}
+
+input UserUpdateManyWithoutEmployerInput {
+  create: [UserCreateWithoutEmployerInput!]
+  connect: [UserWhereUniqueInput!]
+  disconnect: [UserWhereUniqueInput!]
+  delete: [UserWhereUniqueInput!]
+  update: [UserUpdateWithWhereUniqueWithoutEmployerInput!]
+  upsert: [UserUpsertWithWhereUniqueWithoutEmployerInput!]
+}
+
+input UserUpdatemiddleNamesInput {
+  set: [String!]
+}
+
+input UserUpdateOneInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+  delete: Boolean
+  update: UserUpdateDataInput
+  upsert: UserUpsertNestedInput
+}
+
+input UserUpdateOneWithoutApplicationsInput {
+  create: UserCreateWithoutApplicationsInput
+  connect: UserWhereUniqueInput
+  delete: Boolean
+  update: UserUpdateWithoutApplicationsDataInput
+  upsert: UserUpsertWithoutApplicationsInput
+}
+
+input UserUpdateWithoutApplicationsDataInput {
+  email: String
+  firstName: String
+  lastName: String
+  hashedPassword: String
+  userType: UserType
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserUpdatemiddleNamesInput
+  education: EducationUpdateManyInput
+  employer: EmployerUpdateOneWithoutUsersInput
+}
+
+input UserUpdateWithoutEmployerDataInput {
+  email: String
+  firstName: String
+  lastName: String
+  hashedPassword: String
+  userType: UserType
+  employerAccessRights: EmployerAccessRights
+  middleNames: UserUpdatemiddleNamesInput
+  education: EducationUpdateManyInput
+  applications: ApplicationUpdateManyWithoutApplicantInput
+}
+
+input UserUpdateWithWhereUniqueWithoutEmployerInput {
+  where: UserWhereUniqueInput!
+  data: UserUpdateWithoutEmployerDataInput!
+}
+
+input UserUpsertNestedInput {
+  update: UserUpdateDataInput!
+  create: UserCreateInput!
+}
+
+input UserUpsertWithoutApplicationsInput {
+  update: UserUpdateWithoutApplicationsDataInput!
+  create: UserCreateWithoutApplicationsInput!
+}
+
+input UserUpsertWithWhereUniqueWithoutEmployerInput {
+  where: UserWhereUniqueInput!
+  update: UserUpdateWithoutEmployerDataInput!
+  create: UserCreateWithoutEmployerInput!
+}
+
+input UserWhereInput {
+  """Logical AND on all given filters."""
+  AND: [UserWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [UserWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [UserWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  email: String
+
+  """All values that are not equal to given value."""
+  email_not: String
+
+  """All values that are contained in given list."""
+  email_in: [String!]
+
+  """All values that are not contained in given list."""
+  email_not_in: [String!]
+
+  """All values less than the given value."""
+  email_lt: String
+
+  """All values less than or equal the given value."""
+  email_lte: String
+
+  """All values greater than the given value."""
+  email_gt: String
+
+  """All values greater than or equal the given value."""
+  email_gte: String
+
+  """All values containing the given string."""
+  email_contains: String
+
+  """All values not containing the given string."""
+  email_not_contains: String
+
+  """All values starting with the given string."""
+  email_starts_with: String
+
+  """All values not starting with the given string."""
+  email_not_starts_with: String
+
+  """All values ending with the given string."""
+  email_ends_with: String
+
+  """All values not ending with the given string."""
+  email_not_ends_with: String
+  firstName: String
+
+  """All values that are not equal to given value."""
+  firstName_not: String
+
+  """All values that are contained in given list."""
+  firstName_in: [String!]
+
+  """All values that are not contained in given list."""
+  firstName_not_in: [String!]
+
+  """All values less than the given value."""
+  firstName_lt: String
+
+  """All values less than or equal the given value."""
+  firstName_lte: String
+
+  """All values greater than the given value."""
+  firstName_gt: String
+
+  """All values greater than or equal the given value."""
+  firstName_gte: String
+
+  """All values containing the given string."""
+  firstName_contains: String
+
+  """All values not containing the given string."""
+  firstName_not_contains: String
+
+  """All values starting with the given string."""
+  firstName_starts_with: String
+
+  """All values not starting with the given string."""
+  firstName_not_starts_with: String
+
+  """All values ending with the given string."""
+  firstName_ends_with: String
+
+  """All values not ending with the given string."""
+  firstName_not_ends_with: String
+  lastName: String
+
+  """All values that are not equal to given value."""
+  lastName_not: String
+
+  """All values that are contained in given list."""
+  lastName_in: [String!]
+
+  """All values that are not contained in given list."""
+  lastName_not_in: [String!]
+
+  """All values less than the given value."""
+  lastName_lt: String
+
+  """All values less than or equal the given value."""
+  lastName_lte: String
+
+  """All values greater than the given value."""
+  lastName_gt: String
+
+  """All values greater than or equal the given value."""
+  lastName_gte: String
+
+  """All values containing the given string."""
+  lastName_contains: String
+
+  """All values not containing the given string."""
+  lastName_not_contains: String
+
+  """All values starting with the given string."""
+  lastName_starts_with: String
+
+  """All values not starting with the given string."""
+  lastName_not_starts_with: String
+
+  """All values ending with the given string."""
+  lastName_ends_with: String
+
+  """All values not ending with the given string."""
+  lastName_not_ends_with: String
+  hashedPassword: String
+
+  """All values that are not equal to given value."""
+  hashedPassword_not: String
+
+  """All values that are contained in given list."""
+  hashedPassword_in: [String!]
+
+  """All values that are not contained in given list."""
+  hashedPassword_not_in: [String!]
+
+  """All values less than the given value."""
+  hashedPassword_lt: String
+
+  """All values less than or equal the given value."""
+  hashedPassword_lte: String
+
+  """All values greater than the given value."""
+  hashedPassword_gt: String
+
+  """All values greater than or equal the given value."""
+  hashedPassword_gte: String
+
+  """All values containing the given string."""
+  hashedPassword_contains: String
+
+  """All values not containing the given string."""
+  hashedPassword_not_contains: String
+
+  """All values starting with the given string."""
+  hashedPassword_starts_with: String
+
+  """All values not starting with the given string."""
+  hashedPassword_not_starts_with: String
+
+  """All values ending with the given string."""
+  hashedPassword_ends_with: String
+
+  """All values not ending with the given string."""
+  hashedPassword_not_ends_with: String
+  userType: UserType
+
+  """All values that are not equal to given value."""
+  userType_not: UserType
+
+  """All values that are contained in given list."""
+  userType_in: [UserType!]
+
+  """All values that are not contained in given list."""
+  userType_not_in: [UserType!]
+  employerAccessRights: EmployerAccessRights
+
+  """All values that are not equal to given value."""
+  employerAccessRights_not: EmployerAccessRights
+
+  """All values that are contained in given list."""
+  employerAccessRights_in: [EmployerAccessRights!]
+
+  """All values that are not contained in given list."""
+  employerAccessRights_not_in: [EmployerAccessRights!]
+  education_every: EducationWhereInput
+  education_some: EducationWhereInput
+  education_none: EducationWhereInput
+  employer: EmployerWhereInput
+  applications_every: ApplicationWhereInput
+  applications_some: ApplicationWhereInput
+  applications_none: ApplicationWhereInput
+}
+
+input UserWhereUniqueInput {
+  id: ID
+  email: String
 }

@@ -15,16 +15,27 @@ const resolvers = {
     employers: async (_, args, context, info) => {
       return await context.prisma.query.employers({
         where: {
-          name: args.name
+          companyName: args.companyName
         }
       },
       info)
     },
-    postings: async (_, args, context, info) => {
-      const { applicationCount, ...rest } = info;
+    publicPostings: async (_, args, context, info) => {
       const result = await context.prisma.query.postings({
         where: {
-          offeredBy: {  name: context.req.name }
+          status: 'ACTIVE',
+          id: args.id,
+        }
+      }, info);
+      return result;
+    },
+    internalPostings: async (_, args, context, info) => {
+      const { applicationCount, ...rest } = info;
+      console.log('context.req.name:', context.req.name);
+      console.log('context.req.decoded:', context.req.decoded);
+      const result = await context.prisma.query.postings({
+        where: {
+          offeredBy: {  id: context.req.decoded.id }
         }
       }, info);
       console.log(result);
@@ -33,45 +44,130 @@ const resolvers = {
   },
   Mutation: {
     signupEmployer: async (_, args, context, info) => {
-      const hashedPassword = await bcrypt.hash(args.password, 12);
-      return await context.prisma.mutation.createEmployer({
+      const hashedPassword = await bcrypt.hash(args.adminPassword, 12);
+      const employer = await context.prisma.mutation.createEmployer({
         data: {
-          name: args.name,
-          email: args.email,
-          hashedPassword: hashedPassword,
+          contactEmail: args.contactEmail,
+          companyName: args.companyName,
         }
       })
+      const admin =  await context.prisma.mutation.createUser({
+        data: {
+          firstName: args.adminFirstName,
+          lastName: args.adminLastName,
+          email: args.adminEmail,
+          hashedPassword: hashedPassword,
+          userType: 'EMPLOYER',
+          employer: {
+            connect: {
+              companyName: args.companyName
+            }
+          }
+        }
+      })
+      return admin;
     },
-    loginEmployer: async (_, args, context, info) => {
-      const employer = await context.prisma.query.employer({
+    signupCandidate: async (_, args, context, info) => {
+      const hashedPassword = await bcrypt.hash(args.password, 12);
+      const middleNames = typeof args.middleNames === 'string'
+        ? args.middleNames.split(' ')
+        : [];
+      const result = await context.prisma.mutation.createUser({
+        data: {
+          firstName: args.firstName,
+          middleNames,
+          lastName: args.lastName,
+          email: args.email,
+          hashedPassword: hashedPassword,
+          userType: 'CANDIDATE',
+        }
+      })
+      if (!result.middleNames) result.middleNames = [];
+      return result;
+    },
+    login: async (_, args, context, info) => {
+      const user = await context.prisma.query.user({
         where: {
-          name: args.name,
+          email: args.email,
         }
       });
       const AuthorizationError = new Error('User or password incorrect');
-      if (!employer) {
+      if (!user) {
+        console.log('no such user');
         context.res.status(403);
         return AuthorizationError;
-      } 
-      const match = await bcrypt.compare(args.password, employer.hashedPassword);
+      }
+
+      const match = await bcrypt.compare(args.password, user.hashedPassword);
       if (match) {
-        let { name, email } = employer;
-        return jwt.sign({name, email, loginType: 'employer'}, jwtSecret);
+        let { firstName, lastName, email, userType } = user;
+        switch(userType) {
+          case 'CANDIDATE':
+            console.log('CANDIDATE is logging in');
+            return jwt.sign({ firstName, lastName, email, userType }, jwtSecret);
+          case 'EMPLOYER':
+            console.log('is EMPLOYER!!!');
+            console.log('user:', user);
+            const employers = await context.prisma.query.employers({
+              where: {
+                users_some: {
+                  email: email
+                }
+              }
+            });
+            if (employers.length === 0) {
+              context.res.status(403);
+              return new Error('User is employertype, but is not in any employers list of users');
+            }
+            if (employers.length > 1) {
+              context.res.status(403);
+              return new Error('User attempting to log in is in several employers list of users. What!?');
+            }
+            console.log('employer:', employers);
+            return jwt.sign({ firstName, lastName, email, userType, employer: employers[0] }, jwtSecret);
+          default:
+            console.log('is nathing');
+        }
+        return jwt.sign({ name, email, loginType: user.userType}, jwtSecret);
       } else {
+        console.log('wrong passw0rd');
         context.res.status(403);
         return AuthorizationError;
       }
     },
+
+    /*  registerApplication(
+    applicantId: String!,
+    postingId: String!,
+    applicationLetter: String!,
+  ): Application!*/
+
+      // TODO før dette: Login må sende med ID, candidate login må implementeres
+    /*registerApplication: async (_, args, context, info) => {
+      const result = await context.prisma.mutation.createApplication({
+        data: {
+          posting: {
+            connect: {
+              id: args.postingId,
+            }
+          },
+          applicant: {
+            connect: {
+              id: context.req.decoded.id
+            }
+          }
+        }
+      })
+    },*/
     createPosting: async (_, args, context, info) => {
       const result = await context.prisma.mutation.createPosting({
         data: {
-          offeredBy: { connect: { name: context.req.name} },
+          offeredBy: { connect: { id: context.req.decoded.employer.id } },
           postingTitle: args.postingTitle,
           positionTitle: args.positionTitle,
           employmentType: args.employmentType,
           description: args.description,
-          requirements: args.requirements,
-          customId: `${context.req.name}-${args.customId}`.toLowerCase(),
+          customId: `${context.req.decoded.employer.companyName}-${args.customId}`.toLowerCase().replace(' ', '-').trim(),
           createdDate: new Date().toISOString(),
           expiresAt: new Date(args.expiresAt).toISOString(),
           status: args.status || 'UPCOMING'
@@ -80,12 +176,23 @@ const resolvers = {
       return result;
     },
     releasePosting: async (_, args, context, info) => {
-      // TODO: Sjekke at den som etterspør faktisk er den som eier posting
-      console.log('i reached releasePosting. customId is: ', args.customId);
+      const posting = await context.prisma.query.posting({
+        where: {
+          customId: args.customId
+        }
+      }, `{
+        id
+        offeredBy { id , companyName}
+      }`);
+      console.log('this is posting:', posting);
+
+      if (posting.offeredBy.id !== context.req.decoded.employer.id) {
+        throw new Error('releasePosting: posting with customId has employer.id not matching token employer.id');
+      }
+
       const result = await context.prisma.mutation.updatePosting({
         where: {
           customId: args.customId,
-          offeredBy: { connect: { name: context.req.name }}
         },
         data: {
           status: 'ACTIVE',
@@ -98,22 +205,32 @@ const resolvers = {
 }
 
 const privateResolvers = [
+  resolvers.Query.internalPostings.name,
   resolvers.Mutation.createPosting.name,
-  resolvers.Query.postings.name,
-  resolvers.Mutation.releasePosting,
+  resolvers.Mutation.releasePosting.name,
+  //resolvers.Mutation.registerApplication.name,
 ];
 
 const expressAuthMiddleware = (req, res, next) => {
   const { query } = req.body;
-  const resolver = query.substring(query.indexOf("{") + 1, query.indexOf('(')).trim();
-  if (!privateResolvers.includes(resolver)) return next();
-  const token = req.get('Authorization').split(' ')[1];
-  if (!token) return res(403).send('Token missing');
-  if (!jwt.verify(token, jwtSecret)) return res(403).send('Token invalid');
+  const resolver = query.replace('mutation', '').match(/[a-zA-Z0-9_]+/)[0].trim();
+  console.log('incoming request to resolver:', resolver);
+  if (!privateResolvers.includes(resolver)) {
+    console.log('Incoming request does not require authentication');
+    return next();
+  } else {
+    const authorization = req.get('Authorization');
+    if (!authorization) return res.status(403).send({ error: 'Token missing' });
+    const token = authorization.split(' ')[1];
+    if (!token) return res.status(403).send({ error: 'Token missing' });
+    if (!jwt.verify(token, jwtSecret)) return res.status(403).send('Token invalid');
 
-  const decoded = jwt.decode(token);
-  req.name = decoded.name;
-  next();
+    const decoded = jwt.decode(token);
+    req.decoded = decoded;
+    req.name = decoded.name;
+    console.log('middleware has decoded:', decoded);
+    next();
+  }
 }
 
 const server = new GraphQLServer({

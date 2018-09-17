@@ -1,15 +1,47 @@
 # import Employer from '../src/generated/prisma.graphql';
+# import Candidate from '../src/generated/prisma.graphql';
 # import Posting from '../src/generated/prisma.graphql';
 # import PostingStatus from '../src/generated/prisma.graphql';
+# import Application from '../src/generated/prisma.graphql';
 
 type Query {
-  employers(name: String): [Employer!]!
-  postings(postingTitle: String): [Posting!]!
+  employers(companyName: String): [Employer!]!
+  publicPostings(companyName: String, id: String): [Posting!]!
+
+  # Protected Queries (requires Token)
+  internalPostings(customId: String): [Posting!]!
 }
 
 type Mutation {
-  signupEmployer(name: String!, email: String!, password: String!): Employer!
-  loginEmployer(name: String!, password: String!): String!
+  signupEmployer(
+    # Employer information
+    companyName: String!,
+    contactEmail: String!,
+
+    # Admin user information
+    adminFirstName: String!,
+    adminMiddleNames: [String!]!,
+    adminLastName: String!,
+    adminEmail: String!,
+    adminPassword: String!,
+  ): User!
+
+  signupCandidate(
+    firstName: String!,
+    middleNames: [String!]!,
+    lastName: String!,
+    email: String!,
+    password: String!): User!
+
+  login(email: String!, password: String!): String!
+
+  registerApplication(
+    applicantId: String!,
+    postingId: String!,
+    applicationLetter: String!,
+  ): Application!
+  
+  # Protected Mutations (requires Token)
   createPosting(postingTitle: String!,
     positionTitle: String!,
     employmentType: String!,

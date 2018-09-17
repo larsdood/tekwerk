@@ -1,24 +1,39 @@
-type Employer {
+type User {
   id: ID! @unique
   email: String! @unique
-  name: String! @unique
+  firstName: String!
+  middleNames: [String!]!
+  lastName: String!
   hashedPassword: String!
-  postings: [Posting!]!
+  education: [Education!]!
+  userType: UserType!
+  employer: Employer @relation(name: "RegisteredEmployees")
+  employerAccessRights: EmployerAccessRights
+  applications: [Application!]! @relation(name: "ApplicationsByUser" onDelete: CASCADE)
 }
 
-type Candidate {
+type Employer {
   id: ID! @unique
-  email: String! @unique
-  name: String!
-  hashedPassword: String!
-  applications: [Application!]!
+  contactEmail: String! @unique
+  companyName: String! @unique
+  logoUrl: String
+  postings: [Posting!]!
+  users: [User!]! @relation(name: "RegisteredEmployees" onDelete: CASCADE)
+  processes: [EmploymentProcess!]!
 }
 
 type Application {
   id: ID! @unique
-  posting: Posting!
-  applicationLetter: String
-  applicant: Candidate!
+  posting: Posting! @relation(name: "ApplicationsForPosition")
+  applicant: User! @relation(name: "ApplicationsByUser")
+  applicationLetter: String!
+  status: ApplicationStatus!
+}
+
+type EmploymentProcess {
+  id: ID! @unique
+  candidate: User!
+  employer: Employer!
 }
 
 type Posting {
@@ -30,10 +45,47 @@ type Posting {
   employmentType: EmploymentType!
   status: PostingStatus!
   description: String
-  requirements: String
-  applications: [Application!]!
+  requirements: [Requirement!]!
+  niceToHave: [String!]!
+  applications: [Application!]! @relation(name: "ApplicationsForPosition" onDelete: CASCADE)
   createdDate: DateTime!
   expiresAt: DateTime!
+  minimumSalaryOffer: MoneyAmount @relation(name: "MinimumSalaryOffer" onDelete: CASCADE)
+  maximumSalaryOffer: MoneyAmount @relation(name: "MaximumSalaryOffer" onDelete: CASCADE)
+}
+
+type MoneyAmount {
+  currencyCode: String!
+  amount: Int!
+}
+
+type Qualification {
+  field: String!
+  expertise: ExpertiseLevel!
+  yearsOfExperience: Float!
+}
+
+type Requirement {
+  field: String!
+  expertise: ExpertiseLevel
+  yearsOfExperience: Float
+}
+
+type Education {
+  schoolName: String!
+  degreeName: String!
+  degreeType: DegreeType!
+  enrolledAt: DateTime!
+  graduatedAt: DateTime!
+  description: String
+}
+
+enum DegreeType {
+  PHD,
+  MASTERS,
+  BACHELORS,
+  PROFESSION,
+  OTHER
 }
 
 enum EmploymentType {
@@ -47,4 +99,27 @@ enum PostingStatus {
   ACTIVE,
   ARCHIVED,
   UPCOMING
+}
+
+enum UserType {
+  CANDIDATE,
+  EMPLOYER
+}
+
+enum EmployerAccessRights {
+  ADMIN,
+  EDITOR,
+}
+
+enum ExpertiseLevel {
+  BEGINNER,
+  INTERMEDIATE,
+  ADVANCED,
+  EXPERT
+}
+
+enum ApplicationStatus {
+  UNSENDT,
+  IN_PROGRESS,
+  REJECTED
 }

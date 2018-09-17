@@ -3,6 +3,8 @@ import { createSelector } from 'reselect';
 const authSelector = state => state.auth;
 const requestsSelector = state => state.requests;
 const employerDataSelector = state => state.employerData;
+const publicDataSelector = state => state.publicData;
+const routerSelector = state => state.router;
 
 export const tokenSelector = createSelector(
   authSelector,
@@ -55,4 +57,19 @@ export const employerPostingsCountSelector = createSelector(
   employerData => employerData.postings
     ? employerData.postings.length
     : null,
+)
+
+export const publicPostingsSelector = createSelector(
+  publicDataSelector,
+  publicData => publicData.postings,
+)
+
+export const pathnameSelector = createSelector(
+  routerSelector,
+  routerState => routerState.location.pathname
+)
+
+export const postingDetailsSelector = createSelector(
+  publicDataSelector,
+  publicData => publicData.postingDetails,
 )

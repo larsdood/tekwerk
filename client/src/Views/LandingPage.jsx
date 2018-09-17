@@ -5,6 +5,7 @@ import LogoText from '../Media/LogoText4x.png';
 import './LandingPage.css';
 import LoginModal from '../Containers/LoginModal';
 import RegisterModal from '../Containers/RegisterModal';
+import RegisterEmployerModal from '../Containers/RegisterEmployerModal';
 import * as A from '../State/actions';
 
 class LandingPage extends Component {
@@ -25,6 +26,14 @@ class LandingPage extends Component {
 
   closeEmployerRegisterModal = () => {
     this.setState({ showEmployerRegisterModal: false });
+  }
+
+  openCandidateRegisterModal = () => {
+    this.setState({ showCandidateRegisterModal: true });
+  }
+
+  closeCandidateRegisterModal = () => {
+    this.setState({ showCandidateRegisterModal: false });
   }
 
   handleItemClick = (e, something) => {
@@ -102,9 +111,9 @@ class LandingPage extends Component {
 
               <Container style={{ padding: '0 10% 0 0' }}>
                 <Button.Group size='big' inverted>
-                  <RegisterModal open={this.state.showEmployerRegisterModal} close={this.closeEmployerRegisterModal} clientType='employer' trigger={<Button onClick={this.openEmployerRegisterModal} inverted color='blue'>Employer</Button>} />
+                  <RegisterEmployerModal open={this.state.showEmployerRegisterModal} close={this.closeEmployerRegisterModal} clientType='employer' trigger={<Button onClick={this.openEmployerRegisterModal} inverted color='blue'>Employer</Button>} />
                   <Button.Or text='' />
-                  <RegisterModal clientType='candidate' trigger={<Button inverted color='teal'>Candidate</Button>} />
+                  <RegisterModal open={this.state.showCandidateRegisterModal} close={this.closeCandidateRegisterModal} clientType='candidate' trigger={<Button onClick={this.openCandidateRegisterModal} inverted color='teal'>Candidate</Button>} />
                 </Button.Group>
               </Container>
             </Grid.Column>
@@ -206,7 +215,7 @@ class LandingPage extends Component {
             <div>This is a prototype created by Lars Holdaas for experimentation and self-study.<br />
               The stack consists of the following technologies:</div>
               <Header>Front-end</Header>
-              <div>React (Create-React-App), Redux, Redux-Observables, RxJs, Semantic UI, Apollo</div>
+            <div>React (CRA), Redux, Redux-Observables, RxJs, Semantic UI, Apollo-boost, reselect, connected-react-router</div>
               <Header>Back-end</Header>
             <div>Node.js, Graphql-Yoga, Prisma, PostgreSQL, JWT, bcrypt</div></Segment>
             <br/>

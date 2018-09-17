@@ -15,12 +15,22 @@ import { routeToMiddleware } from './State/routeToMiddleware';
 import { authReducer } from './State/authReducer';
 import { requestsReducer } from './State/requestsReducer';
 import { employerReducer } from './State/employerReducer';
+import publicDataReducer from './State/publicDataReducer';
+
+
+const INITIAL_STATE = {};
 
 const storedToken = !!localStorage && localStorage.getItem('auth-token');
 
-const INITIAL_STATE = { auth: { token: storedToken, ...jwtDecode(storedToken) }};
+if (storedToken) {
+  INITIAL_STATE.auth = { token: storedToken, ...jwtDecode(storedToken)};
+}
 
-const ROOT_REDUCER = combineReducers({ auth: authReducer, requests: requestsReducer, employerData: employerReducer});
+const ROOT_REDUCER = combineReducers({
+  auth: authReducer,
+  requests: requestsReducer,
+  employerData: employerReducer,
+  publicData: publicDataReducer });
 
 const history = createBrowserHistory()
 const epicMiddleware = createEpicMiddleware();

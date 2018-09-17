@@ -1,6 +1,8 @@
 import 'rxjs-compat';
 import client from '../Graphql/Client';
 import gql from 'graphql-tag';
+import jwtDecode from 'jwt-decode';
+
 import { Observable, from } from 'rxjs-compat';
 import * as A from './actions';
 import * as S from './selectors';
@@ -15,8 +17,8 @@ const queryEmployersEpic = action$ =>
         query: gql`
         query {
           employers {
-            name,
-            email,
+            companyName,
+            contactEmail,
             postings {
               postingTitle
             }
@@ -27,14 +29,64 @@ const queryEmployersEpic = action$ =>
       .catch(error => [A.queryEmployers.failure(error)])
     )
 
-const queryPostingsEpic = action$ =>
+const queryPublicPostingsEpic = action$ => 
+  action$
+    .ofType(A.queryPublicPostings.REQUEST)
+    .switchMap(action => Observable.from(
+      client.query({
+        query: gql`
+        query {
+          publicPostings {
+            postingTitle,
+            positionTitle,
+            employmentType,
+            expiresAt,
+            id,
+            description,
+            offeredBy{
+              companyName
+            }
+          }
+        }`
+      }))
+      .map(A.queryPublicPostings.success)
+      .catch(error => [A.queryPublicPostings.failure(error)])
+      )
+
+const queryPostingDetailsEpic = action$ =>
+  action$
+    .ofType(A.queryPostingDetails.REQUEST)
+    .switchMap(action => Observable.from(
+      client.query({
+        query: gql`
+        query {
+          publicPostings (id: "${action.id}") {
+            postingTitle,
+            positionTitle,
+            employmentType,
+            expiresAt,
+            id,
+            description,
+            offeredBy{
+              companyName,
+              contactEmail
+            }
+          }
+        }`
+      }))
+      .map(A.queryPostingDetails.success)
+      .catch(error => [A.queryPostingDetails.failure(error)])
+      )
+
+const queryPostingsEpic = (action$, state$) =>
   action$
     .ofType(A.queryPostings.REQUEST)
     .switchMap(() => Observable.from(
       client.query({
+        context: getAuthHeader(state$),
         query: gql`
         query {
-          postings {
+          internalPostings {
             postingTitle,
             positionTitle,
             status,
@@ -51,35 +103,63 @@ const queryPostingsEpic = action$ =>
 
 const signupEmployerEpic = action$ =>
   action$
-    .ofType(A.registerEmployer.REQUEST)
+    .ofType(A.signupEmployer.REQUEST)
     .switchMap(action => Observable.from(
       client.mutate({
         mutation: gql`
         mutation {
           signupEmployer(
-            name: "${action.name}",
-            email: "${action.email}",
-            password: "${action.password}"
-          ) {name, email }
+            companyName: "${action.companyName}",
+            contactEmail: "${action.contactEmail}",
+            adminFirstName: "${action.adminFirstName}",
+            adminMiddleNames: "${action.adminMiddleNames}",
+            adminLastName: "${action.adminLastName}",
+            adminEmail: "${action.adminEmail}",
+            adminPassword: "${action.adminPassword}"
+          ) {firstName, lastName, email }
         }`
       }))
-    .map(A.registerEmployer.success)
-    .catch(error => [A.registerEmployer.failure(error)])
-  )
+      .map(A.signupEmployer.success)
+      .catch(error => [A.signupEmployer.failure(error)])
+    )
 
-const loginEmployerEpic = action$ =>
+const signUpCandidateEpic = action$ =>
   action$
-    .ofType(A.loginEmployer.REQUEST)
+    .ofType(A.signupCandidate.REQUEST)
+    .do(action => { console.log(action)})
+    .switchMap(action => Observable.from(
+      client.mutate({
+        mutation: gql`
+        mutation {
+          signupCandidate(
+            firstName: "${action.firstName}",
+            middleNames: "${action.middleNames}",
+            lastName: "${action.lastName}",
+            email: "${action.email}",
+            password: "${action.password}"
+          ) {firstName, middleNames, lastName, email }
+        }`
+      }))
+      .flatMap(response => [A.signupCandidate.success(response), A.routeTo('/candidate/dashboard')])
+      .catch(error => [A.signupCandidate.failure(error)])
+    )
+
+const loginEpic = action$ =>
+  action$
+    .ofType(A.login.REQUEST)
     .switchMap(action => Observable.from(client.mutate({
         mutation: gql`
         mutation {
-          loginEmployer (name: "${action.name}", password: "${action.password}")
+          login (email: "${action.email}", password: "${action.password}")
         }`
         }))
-      .map(response => response.data.loginEmployer)
-      .do(token => !!localStorage && localStorage.setItem('auth-token', token))
-      .flatMap(token => [A.loginEmployer.success(token), A.routeTo('/employer/dashboard')])
-      .catch(error => [A.loginEmployer.failure(error)])
+      .map(response => ({ token: response.data.login, decoded: jwtDecode(response.data.login) }))
+      .do(({token}) => !!localStorage && localStorage.setItem('auth-token', token))
+      .do(({decoded}) => { console.log('decoded:', decoded)} )
+      .flatMap(({token, decoded}) =>
+        [A.login.success(token),
+        A.routeTo(decoded.userType === 'CANDIDATE' ? '/candidate/dashboard/' : '/employer/dashboard')])
+      .catch(error => [A.login.failure(error)])
     )
 
 const newPostingEpic = (action$, state$) =>
@@ -120,4 +200,22 @@ const releasePostingEpic = (action$, state$) =>
       .catch(error => [A.releasePosting.failure(error)])
 )
 
-export default [ signupEmployerEpic, queryEmployersEpic, loginEmployerEpic, newPostingEpic, queryPostingsEpic, releasePostingEpic ];
+//TODO: Trenger denne mer logikk? Backend?
+const logoutEpic = action$ =>
+  action$
+    .ofType(A.logout.REQUEST)
+    .do(() => !!localStorage && localStorage.removeItem('auth-token'))
+    .flatMap(() => [A.logout.success(), A.routeTo('/')]);
+
+export default [
+  signupEmployerEpic,
+  queryEmployersEpic,
+  loginEpic,
+  newPostingEpic,
+  queryPostingsEpic,
+  queryPostingDetailsEpic,
+  queryPublicPostingsEpic,
+  releasePostingEpic,
+  logoutEpic,
+  signUpCandidateEpic
+];

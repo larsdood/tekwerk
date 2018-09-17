@@ -27,8 +27,15 @@ const createAsyncActions = (actionTypes, actionParams = {}) => {
   }
 };
 
-const createAsyncAction = (actionType, params, defaultFunc) => (
-  Array.isArray(params)
-    ? new Function(...params, `return { type: "${actionType}",  ${params}}`)
-    : defaultFunc || function () { return { type: actionType } }
-);
+const createAsyncAction = (actionType, params, defaultFunc) => {
+  switch (true) {
+    case Array.isArray(params):
+      return new Function(...params, `return { type: "${actionType}",  ${params}}`)
+    case typeof params === 'object':
+      if (params.objectParams) {
+        return new Function(`{${params.params}}`, `return { type: "${actionType}",  ${params.params}}`);
+      }
+    default:
+      return defaultFunc || function () { return { type: actionType } };
+  }
+}

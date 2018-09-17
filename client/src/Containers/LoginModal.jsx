@@ -6,7 +6,7 @@ import * as A from '../State/actions';
 
 class LoginModal extends Component {
   state = {
-    name: '',
+    email: '',
     password: '',
   }
   onChange = (_, { name, value }) => {
@@ -14,8 +14,8 @@ class LoginModal extends Component {
   }
 
   submitForm = () => {
-    const { name, password } = this.state;
-    this.props.loginEmployer(name, password);
+    const { email, password } = this.state;
+    this.props.login(email, password);
   }
 
   render() {
@@ -24,7 +24,7 @@ class LoginModal extends Component {
         <Modal.Header content='Log in'/>
         <Modal.Content>
         <Form onSubmit={this.submitForm} inverted>
-          <Form.Input name='name' label='Company Name' required onChange={this.onChange} />
+          <Form.Input name='email' label='Email' required onChange={this.onChange} />
           <Form.Input name='password' type='password' label='Password' required onChange={this.onChange} />
           <Button color='blue' type='submit'>Log in</Button>
         </Form>
@@ -35,7 +35,7 @@ class LoginModal extends Component {
 }
 
 const mapDispatchToProps = dispatch => ({
-  loginEmployer: (name, password) => dispatch(A.loginEmployer.request(name, password))
+  login: (email, password) => dispatch(A.login.request(email, password))
 })
 
 export default connect(null, mapDispatchToProps)(LoginModal);

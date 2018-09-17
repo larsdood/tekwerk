@@ -26,15 +26,13 @@ class EmployerPostingCard extends Component {
             {positionTitle}, {employmentType}
           </Card.Description>
           <Card.Description>
-            Posted: {new Date(createdDate).toDateString()}
-            <br/>
             Expires: {new Date(expiresAt).toDateString()}
           </Card.Description>
 
         </Card.Content>
         <Card.Content>
           0 applicants
-          {this.props.posting.status === 'UPCOMING' && <Button onClick={this.releaseButtonClicked} color='blue' floated='right'>Release posting</Button>}
+          {this.props.posting.status === 'UPCOMING' && <Button onClick={this.releaseButtonClicked} color='blue' floated='right'>Publish posting</Button>}
         </Card.Content>
       </Card>
       )
