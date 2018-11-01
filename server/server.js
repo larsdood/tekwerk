@@ -371,15 +371,19 @@ server.express.use(cors());
 server.express.use(bodyParser.urlencoded({ extended: false }))
 server.express.use(gQLbodyParser.graphql())
 
-const production = true;
+const production = process.env.NODE_ENV && process.env.NODE_ENV ==='production';
+
+let PORT;
 
 if (production) {
-  server.express.use(express.static('../client/build'))
+  server.express.use(express.static('../client/build'));
+  PORT = process.env.PORT || 80;
+} else {
+  PORT = 4000;
 }
 
 server.express.post(server.options.endpoint, (req, res, next) => expressAuthMiddleware(req, res, next))
 
-const PORT = 4000;
 server.start({
   port: PORT,
   endpoint: '/graphql/',
