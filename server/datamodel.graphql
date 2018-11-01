@@ -5,17 +5,29 @@ type User {
   middleNames: [String!]!
   lastName: String!
   hashedPassword: String!
-  education: [Education!]!
+  aboutMe: String
+  nationality: String
+  livingInCountry: String
+  livingInCity: String
+  website: String
+  languageSkills: String
+  workExperience: String
+  education: String
+  interestTags: [String!]!
   userType: UserType!
   employer: Employer @relation(name: "RegisteredEmployees")
   employerAccessRights: EmployerAccessRights
   applications: [Application!]! @relation(name: "ApplicationsByUser" onDelete: CASCADE)
+  messageThreads: [MessageThread!]!
 }
 
 type Employer {
   id: ID! @unique
   contactEmail: String! @unique
   companyName: String! @unique
+  country: String
+  city: String
+  website: String
   logoUrl: String
   postings: [Posting!]!
   users: [User!]! @relation(name: "RegisteredEmployees" onDelete: CASCADE)
@@ -39,45 +51,64 @@ type EmploymentProcess {
 type Posting {
   id: ID! @unique
   customId: String! @unique
-  offeredBy: Employer!
   postingTitle: String!
   positionTitle: String!
+  country: String!
+  city: String
   employmentType: EmploymentType!
-  status: PostingStatus!
   description: String
-  requirements: [Requirement!]!
-  niceToHave: [String!]!
+  minimumSalary: Int
+  maximumSalary: Int
+  currency: String
+  workingHoursFrom: String
+  workingHoursTo: String
+  vacationDays: Int
+  minimumEducation: String
+  minimumExperience: String
+  internationalOK: Boolean
+  hasRelocationAllowance: Boolean
+  requirements: String!
+  niceToHave: String
+  tags: [String!]!
+  releaseAt: DateTime
+  expiresAt: DateTime!
+
+  offeredBy: Employer!
+  status: PostingStatus!
   applications: [Application!]! @relation(name: "ApplicationsForPosition" onDelete: CASCADE)
   createdDate: DateTime!
-  expiresAt: DateTime!
-  minimumSalaryOffer: MoneyAmount @relation(name: "MinimumSalaryOffer" onDelete: CASCADE)
-  maximumSalaryOffer: MoneyAmount @relation(name: "MaximumSalaryOffer" onDelete: CASCADE)
 }
 
-type MoneyAmount {
-  currencyCode: String!
-  amount: Int!
+type MessageThread {
+  id: ID! @unique
+  users: [User!]!
+  messages: [Message!]!
 }
 
-type Qualification {
-  field: String!
-  expertise: ExpertiseLevel!
-  yearsOfExperience: Float!
+type Message {
+  from: User! @relation(name: "Sender")
+  to: User! @relation(name: "Receiver")
+  sentAt: DateTime!
+  readAt: DateTime
+  message: String!
 }
 
-type Requirement {
-  field: String!
-  expertise: ExpertiseLevel
-  yearsOfExperience: Float
+type YearMonth {
+  year: Int!
+  month: Int!
 }
 
-type Education {
-  schoolName: String!
-  degreeName: String!
-  degreeType: DegreeType!
-  enrolledAt: DateTime!
-  graduatedAt: DateTime!
-  description: String
+type LanguageSkill {
+  languageName: String!
+  profifiencyLevel: LanguageProficiencyLevel!
+}
+
+enum LanguageProficiencyLevel {
+  NATIVE,
+  FLUENT,
+  BUSINESS,
+  INTERMEDIATE,
+  ELEMENTARY,
 }
 
 enum DegreeType {
@@ -85,6 +116,7 @@ enum DegreeType {
   MASTERS,
   BACHELORS,
   PROFESSION,
+  EXCHANGE,
   OTHER
 }
 
@@ -111,15 +143,9 @@ enum EmployerAccessRights {
   EDITOR,
 }
 
-enum ExpertiseLevel {
-  BEGINNER,
-  INTERMEDIATE,
-  ADVANCED,
-  EXPERT
-}
-
 enum ApplicationStatus {
-  UNSENDT,
-  IN_PROGRESS,
-  REJECTED
+  WAITING_FOR_REVIEW,
+  IN_REVIEW,
+  REJECTED,
+  ACCEPTED
 }

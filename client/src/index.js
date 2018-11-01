@@ -15,6 +15,7 @@ import { routeToMiddleware } from './State/routeToMiddleware';
 import { authReducer } from './State/authReducer';
 import { requestsReducer } from './State/requestsReducer';
 import { employerReducer } from './State/employerReducer';
+import { messageReducer } from './State/messageReducer';
 import publicDataReducer from './State/publicDataReducer';
 
 
@@ -30,7 +31,8 @@ const ROOT_REDUCER = combineReducers({
   auth: authReducer,
   requests: requestsReducer,
   employerData: employerReducer,
-  publicData: publicDataReducer });
+  publicData: publicDataReducer,
+  messageData: messageReducer });
 
 const history = createBrowserHistory()
 const epicMiddleware = createEpicMiddleware();

@@ -16,13 +16,8 @@ class RegisterModal extends Component {
   componentWillReceiveProps(nextProps) {
     if (this.state.awaitingRequest) {
       if (nextProps.awaitingResponse) {
-        console.log`--- one state --- awaiting, success, failure`
-        console.log(nextProps.awaitingResponse);
-        console.log(nextProps.successStack)
-        console.log(nextProps.failureStack)
         if (nextProps.failureStack.includes(A.signupEmployer.ROOT)) {
           this.setState({ awaitingRequest: false });
-          console.log('bro, register failed');
         }
       }
     }
@@ -39,7 +34,6 @@ class RegisterModal extends Component {
   submitForm = () => {
     this.setState({ awaitingRequest: true });
     const { firstName, middleNames, lastName, email, password } = this.state;
-    console.log('sign up candidate');
     this.props.signupCandidate(
       firstName,
       middleNames,
@@ -50,7 +44,6 @@ class RegisterModal extends Component {
   }
 
   render() {
-    console.log('hsould register be open?', this.props.open);
     return (
       <Modal onClose={this.props.close} open={this.props.open} basic size='tiny' trigger={this.props.trigger}>
         <Modal.Header content={`Register ${this.props.clientType}`}/>

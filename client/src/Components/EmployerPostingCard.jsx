@@ -1,19 +1,19 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, Button } from 'semantic-ui-react';
 
 class EmployerPostingCard extends Component {
   releaseButtonClicked = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log('release the kraken!');
     this.props.onReleaseClick(this.props.posting.customId);
   }
 
   render() {
-    const { postingTitle, positionTitle, employmentType, createdDate, expiresAt, customId } = this.props.posting;
+    const { postingTitle, positionTitle, employmentType, createdDate, expiresAt, customId, id, status } = this.props.posting;
 
     return (
-      <Card href = {`/postings/${customId}`}>
+      <Card as={Link} to={`/employer/postings/${status.toLowerCase()}/${id}`}>
         <Card.Content>
           <Card.Header textAlign='center'>
             {postingTitle}
@@ -31,8 +31,8 @@ class EmployerPostingCard extends Component {
 
         </Card.Content>
         <Card.Content>
-          0 applicants
-          {this.props.posting.status === 'UPCOMING' && <Button onClick={this.releaseButtonClicked} color='blue' floated='right'>Publish posting</Button>}
+          {status === 'ACTIVE' && `${this.props.posting.applications.length} applicants`} 
+          {status === 'UPCOMING' && <Button onClick={this.releaseButtonClicked} color='blue' floated='right'>Publish posting</Button>}
         </Card.Content>
       </Card>
       )

@@ -10,7 +10,7 @@ class LoginModal extends Component {
     password: '',
   }
   onChange = (_, { name, value }) => {
-    this.setState({ [name]: value }, () => { console.log(this.state) })
+    this.setState({ [name]: value })
   }
 
   submitForm = () => {

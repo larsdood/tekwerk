@@ -1,4 +1,5 @@
 const { GraphQLServer } = require('graphql-yoga');
+const express = require('express');
 const { Prisma } = require('prisma-binding');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -35,12 +36,39 @@ const resolvers = {
       console.log('context.req.decoded:', context.req.decoded);
       const result = await context.prisma.query.postings({
         where: {
-          offeredBy: {  id: context.req.decoded.id }
+          offeredBy: {  id: context.req.decoded.employer.id }
         }
       }, info);
       console.log(result);
       return result;
-    }
+    },
+    internalPostingDetails: async (_, args, context, info) => {
+      console.log('info:', info);
+      const posting = await context.prisma.query.postings({
+        where: {
+          id: args.id,
+          offeredBy: { id: context.req.decoded.employer.id }
+        }
+      }, info);
+
+      if (!posting) {
+        throw new Error(`internalPostingDetails: cannot find posting with id ${args.id}`)
+      }
+
+      return posting[0];
+    },
+    messageThreads: async (_, args, context, info) => {
+      const threads = await context.prisma.query.messageThreads({
+        where: {
+          id: args.id,
+          users_some: {
+            id: context.req.decoded.id
+          }
+        }
+      }, info);
+
+      return threads;
+    },
   },
   Mutation: {
     signupEmployer: async (_, args, context, info) => {
@@ -100,11 +128,11 @@ const resolvers = {
 
       const match = await bcrypt.compare(args.password, user.hashedPassword);
       if (match) {
-        let { firstName, lastName, email, userType } = user;
+        let { id, firstName, lastName, email, userType } = user;
         switch(userType) {
           case 'CANDIDATE':
             console.log('CANDIDATE is logging in');
-            return jwt.sign({ firstName, lastName, email, userType }, jwtSecret);
+            return jwt.sign({ id, firstName, lastName, email, userType }, jwtSecret);
           case 'EMPLOYER':
             console.log('is EMPLOYER!!!');
             console.log('user:', user);
@@ -124,11 +152,11 @@ const resolvers = {
               return new Error('User attempting to log in is in several employers list of users. What!?');
             }
             console.log('employer:', employers);
-            return jwt.sign({ firstName, lastName, email, userType, employer: employers[0] }, jwtSecret);
+            return jwt.sign({ id, firstName, lastName, email, userType, employer: employers[0] }, jwtSecret);
           default:
             console.log('is nathing');
         }
-        return jwt.sign({ name, email, loginType: user.userType}, jwtSecret);
+        return jwt.sign({ id, name, email, loginType: user.userType}, jwtSecret);
       } else {
         console.log('wrong passw0rd');
         context.res.status(403);
@@ -136,14 +164,7 @@ const resolvers = {
       }
     },
 
-    /*  registerApplication(
-    applicantId: String!,
-    postingId: String!,
-    applicationLetter: String!,
-  ): Application!*/
-
-      // TODO før dette: Login må sende med ID, candidate login må implementeres
-    /*registerApplication: async (_, args, context, info) => {
+    sendApplication: async (_, args, context, info) => {
       const result = await context.prisma.mutation.createApplication({
         data: {
           posting: {
@@ -153,24 +174,69 @@ const resolvers = {
           },
           applicant: {
             connect: {
-              id: context.req.decoded.id
+              email: context.req.decoded.email,
             }
-          }
+          },
+          applicationLetter: args.applicationLetter,
+          status: 'WAITING_FOR_REVIEW',
         }
-      })
-    },*/
+      });
+      return result;
+    },
+
     createPosting: async (_, args, context, info) => {
+      const {
+        postingTitle,
+        positionTitle,
+        country,
+        city,
+        employmentType,
+        description,
+        minimumSalary,
+        maximumSalary,
+        currency,
+        workingHoursFrom,
+        workingHoursTo,
+        vacationDays,
+        minimumEducation,
+        minimumExperience,
+        internationalOK,
+        hasRelocationAllowance,
+        requirements,
+        niceToHave,
+        tags,
+        releaseAt,
+        expiresAt
+      } = args;
       const result = await context.prisma.mutation.createPosting({
         data: {
-          offeredBy: { connect: { id: context.req.decoded.employer.id } },
-          postingTitle: args.postingTitle,
-          positionTitle: args.positionTitle,
-          employmentType: args.employmentType,
-          description: args.description,
           customId: `${context.req.decoded.employer.companyName}-${args.customId}`.toLowerCase().replace(' ', '-').trim(),
-          createdDate: new Date().toISOString(),
+          postingTitle,
+          positionTitle,
+          country,
+          city,
+          employmentType,
+          description,
+          minimumSalary,
+          maximumSalary,
+          currency,
+          workingHoursFrom,
+          workingHoursTo,
+          vacationDays,
+          minimumEducation,
+          minimumExperience,
+          internationalOK,
+          hasRelocationAllowance,
+          requirements,
+          niceToHave,
+          // TODO: fix tags
+          //tags,
+          releaseAt: args.releaseAt ? new Date(args.releaseAt).toISOString() : undefined,
           expiresAt: new Date(args.expiresAt).toISOString(),
-          status: args.status || 'UPCOMING'
+
+          offeredBy: { connect: { id: context.req.decoded.employer.id } },
+          createdDate: new Date().toISOString(),
+          status: 'UPCOMING',
         }
       });
       return result;
@@ -200,21 +266,75 @@ const resolvers = {
       })
       console.log(result);
       return result.customId;
+    },
+    postMessage: async (_, args, context, info) => {
+      // bruke thread mellom args.toId og context.id
+      // legge til meldingen og lagre i backend. return nye threaden
+      let thread = await context.prisma.query.messageThreads({
+        where: {
+          users_some: {
+            id: context.req.decoded.id,
+          }
+        }
+      });
+      console.log('thread:', thread);
+      console.log('context.req.decoded:', context.req.decoded);
+      console.log('context.req.decoded.id:', context.req.decoded.id);
+      console.log('args.toId:', args.toId);
+      if (!thread.length) {
+        console.log('need to make message thread');
+        
+        thread = await context.prisma.mutation.createMessageThread({
+          data: {
+            users: { connect: [{
+                id: context.req.decoded.id
+              }, {
+                id: args.toId
+              }]
+            }
+          }
+        })
+      } else {
+        thread = thread[0];
+      }
+
+      const newThread = await context.prisma.mutation.updateMessageThread({
+        where: {
+          id: thread.id,
+        },
+        data: {
+          messages: {
+            create: [{
+              from: { connect: { id: context.req.decoded.id }},
+              to: { connect: { id: args.toId }},
+              sentAt: new Date().toISOString(),
+              message: args.message,
+            }]
+          }
+        }
+      }, info)
+
+      console.log('thread:', thread);
+      console.log('lets return');
+      return newThread;
     }
   }
 }
 
 const privateResolvers = [
   resolvers.Query.internalPostings.name,
+  resolvers.Query.internalPostingDetails.name,
+  resolvers.Query.messageThreads.name,
   resolvers.Mutation.createPosting.name,
   resolvers.Mutation.releasePosting.name,
-  //resolvers.Mutation.registerApplication.name,
+  resolvers.Mutation.sendApplication.name,
+  resolvers.Mutation.postMessage.name,
 ];
 
 const expressAuthMiddleware = (req, res, next) => {
   const { query } = req.body;
   const resolver = query.replace('mutation', '').match(/[a-zA-Z0-9_]+/)[0].trim();
-  console.log('incoming request to resolver:', resolver);
+  console.log('request:', resolver);
   if (!privateResolvers.includes(resolver)) {
     console.log('Incoming request does not require authentication');
     return next();
@@ -246,11 +366,23 @@ const server = new GraphQLServer({
   })
 })
 
+// kan man lage to endepunkter? en med auth og en uten?
 server.express.use(cors());
 server.express.use(bodyParser.urlencoded({ extended: false }))
 server.express.use(gQLbodyParser.graphql())
 
+const production = true;
+
+if (production) {
+  server.express.use(express.static('../client/build'))
+}
+
 server.express.post(server.options.endpoint, (req, res, next) => expressAuthMiddleware(req, res, next))
 
 const PORT = 4000;
-server.start({port: PORT}, () => console.log('GraphQL yoga server running on ' + PORT))
+server.start({
+  port: PORT,
+  endpoint: '/graphql/',
+  playground: '/graphql/playground'
+}
+  , () => console.log('GraphQL yoga server running on ' + PORT))

@@ -2,8 +2,7 @@ import 'rxjs-compat';
 import client from '../Graphql/Client';
 import gql from 'graphql-tag';
 import jwtDecode from 'jwt-decode';
-
-import { Observable, from } from 'rxjs-compat';
+import { Observable } from 'rxjs-compat';
 import * as A from './actions';
 import * as S from './selectors';
 
@@ -78,9 +77,9 @@ const queryPostingDetailsEpic = action$ =>
       .catch(error => [A.queryPostingDetails.failure(error)])
       )
 
-const queryPostingsEpic = (action$, state$) =>
+const queryInternalPostingsEpic = (action$, state$) =>
   action$
-    .ofType(A.queryPostings.REQUEST)
+    .ofType(A.queryInternalPostings.REQUEST)
     .switchMap(() => Observable.from(
       client.query({
         context: getAuthHeader(state$),
@@ -93,13 +92,87 @@ const queryPostingsEpic = (action$, state$) =>
             employmentType,
             createdDate,
             expiresAt,
-            customId
+            customId,
+            id,
+            applications {
+              id
+            }
           }
         }`
       }))
-      .map(A.queryPostings.success)
-      .catch(error => [A.queryPostings.failure(error)])
-    )
+      .map(A.queryInternalPostings.success)
+      .catch(error => [A.queryInternalPostings.failure(error)])
+    );
+
+const queryInternalPostingDetailsEpic = (action$, state$) =>
+  action$
+    .ofType(A.queryInternalPostingDetails.REQUEST)
+    .switchMap(action => Observable.from(
+      client.query({
+        context: getAuthHeader(state$),
+        query: gql`
+        query {
+          internalPostingDetails (id: "${action.id}") {
+            postingTitle,
+            positionTitle,
+            status,
+            employmentType,
+            createdDate,
+            expiresAt,
+            customId,
+            id,
+            applications {
+              applicant {
+                firstName,
+                middleNames,
+                lastName,
+                email,
+                id,
+              },
+              applicationLetter,
+              status
+            }
+          }
+        }
+        `
+      })
+    ).map(A.queryInternalPostingDetails.success)
+    .catch(error => [A.queryInternalPostingDetails.failure(error)])
+  );
+
+const queryMessageThreadsEpic = (action$, state$) =>
+  action$
+    .ofType(A.queryMessageThreads.REQUEST)
+    .switchMap(action => Observable.from(
+      client.query({
+        context: getAuthHeader(state$),
+        query: gql`
+        query {
+          messageThreads
+          {id, users{id, firstName, lastName}, messages(first:1){message, sentAt}}
+        }
+        `
+      })
+    ).map(A.queryMessageThreads.success)
+    .catch(error => [A.queryMessageThreads.failure(error)])
+  );
+
+const queryMessagesInThreadEpic = (action$, state$) =>
+  action$
+    .ofType(A.queryMessagesInThread.REQUEST)
+    .switchMap(action => Observable.from(
+      client.query({
+        context: getAuthHeader(state$),
+        query: gql`
+        query {
+          messageThreads (id: "${action.threadId}")
+          {id, users{id, firstName, lastName}, messages{message, from{id, firstName, lastName}, to{id, firstName, lastName}, sentAt, readAt}}
+        }
+        `
+      })
+    ).map(A.queryMessagesInThread.success)
+    .catch(error => [A.queryMessageThreads.failure(error)])
+  );
 
 const signupEmployerEpic = action$ =>
   action$
@@ -119,14 +192,16 @@ const signupEmployerEpic = action$ =>
           ) {firstName, lastName, email }
         }`
       }))
-      .map(A.signupEmployer.success)
+      .flatMap(response => [
+        A.signupEmployer.success(response),
+        A.login.request(action.adminEmail, action.adminPassword)
+      ])
       .catch(error => [A.signupEmployer.failure(error)])
     )
 
 const signUpCandidateEpic = action$ =>
   action$
     .ofType(A.signupCandidate.REQUEST)
-    .do(action => { console.log(action)})
     .switchMap(action => Observable.from(
       client.mutate({
         mutation: gql`
@@ -140,7 +215,10 @@ const signUpCandidateEpic = action$ =>
           ) {firstName, middleNames, lastName, email }
         }`
       }))
-      .flatMap(response => [A.signupCandidate.success(response), A.routeTo('/candidate/dashboard')])
+      .flatMap(response => [
+          A.signupCandidate.success(response),
+          A.login.request(action.email, action.password)
+        ])
       .catch(error => [A.signupCandidate.failure(error)])
     )
 
@@ -155,10 +233,9 @@ const loginEpic = action$ =>
         }))
       .map(response => ({ token: response.data.login, decoded: jwtDecode(response.data.login) }))
       .do(({token}) => !!localStorage && localStorage.setItem('auth-token', token))
-      .do(({decoded}) => { console.log('decoded:', decoded)} )
       .flatMap(({token, decoded}) =>
         [A.login.success(token),
-        A.routeTo(decoded.userType === 'CANDIDATE' ? '/candidate/dashboard/' : '/employer/dashboard')])
+        A.routeTo(decoded.userType === 'CANDIDATE' ? '/candidate/dashboard/' : '/employer/postings/')])
       .catch(error => [A.login.failure(error)])
     )
 
@@ -170,13 +247,30 @@ const newPostingEpic = (action$, state$) =>
         context: getAuthHeader(state$),
         mutation: gql`
         mutation {
-          createPosting(postingTitle: "${action.postingTitle}",
+          createPosting(
+            customId: "${action.customId}",
+            postingTitle: "${action.postingTitle}",
             positionTitle: "${action.positionTitle}",
+            country: "${action.country}",
+            city: "${action.city}",
             employmentType: "${action.employmentType}",
             description: "${action.description}",
+            minimumSalary: ${parseInt(action.minimumSalary, 10)},
+            maximumSalary: ${parseInt(action.maximumSalary, 10)},
+            currency: "${action.currency}",
+            workingHoursFrom: "${action.workingHoursFrom}",
+            workingHoursTo: "${action.workingHoursTo}",
+            vacationDays: ${parseInt(action.vacationDays, 10)},
+            minimumEducation: "${action.minimumEducation}",
+            minimumExperience: "${action.minimumExperience}",
+            internationalOK: ${action.internationalOK},
+            hasRelocationAllowance: ${action.hasRelocationAllowance},
             requirements: "${action.requirements}",
-            customId: "${action.customId}",
-            expiresAt: "${action.expiresAt}" )
+            niceToHave: "${action.niceToHave}",
+            tags: "${action.tags}",
+            releaseAt: "${action.releaseAt}",
+            expiresAt: "${action.expiresAt}"
+            )
             {postingTitle, status }
         }`
       }))
@@ -200,6 +294,45 @@ const releasePostingEpic = (action$, state$) =>
       .catch(error => [A.releasePosting.failure(error)])
 )
 
+const sendApplicationEpic = (action$, state$) =>
+  action$
+    .ofType(A.sendApplication.REQUEST)
+    .switchMap(action => Observable.from(
+      client.mutate({
+        context: getAuthHeader(state$),
+        mutation: gql`
+        mutation {
+          sendApplication(
+            postingId: "${action.postingId}",
+            applicationLetter: "${action.applicationLetter}"
+          ){status}
+        }
+        `
+      }))
+      .map(A.sendApplication.success)
+      .catch(error => [A.sendApplication.failure(error)])
+);
+
+const postMessageEpic = (action$, state$) =>
+  action$
+    .ofType(A.postMessage.REQUEST)
+    .switchMap(action => Observable.from(
+      client.mutate({
+        context: getAuthHeader(state$),
+        mutation: gql`
+        mutation {
+          postMessage(
+            toId: "${action.toId}",
+            message: "${action.message}"
+          ){id, users{id, firstName, lastName}, messages{message, from{id, firstName, lastName}, to{id, firstName, lastName}, sentAt, readAt}}
+        }
+        `
+      })
+    )
+    .map(A.postMessage.success)
+    .catch(error => [A.postMessage.failure(error)])
+);
+
 //TODO: Trenger denne mer logikk? Backend?
 const logoutEpic = action$ =>
   action$
@@ -212,10 +345,15 @@ export default [
   queryEmployersEpic,
   loginEpic,
   newPostingEpic,
-  queryPostingsEpic,
+  queryInternalPostingsEpic,
   queryPostingDetailsEpic,
   queryPublicPostingsEpic,
   releasePostingEpic,
   logoutEpic,
-  signUpCandidateEpic
+  signUpCandidateEpic,
+  sendApplicationEpic,
+  queryInternalPostingDetailsEpic,
+  postMessageEpic,
+  queryMessageThreadsEpic,
+  queryMessagesInThreadEpic
 ];

@@ -3,6 +3,7 @@
 # import Posting from '../src/generated/prisma.graphql';
 # import PostingStatus from '../src/generated/prisma.graphql';
 # import Application from '../src/generated/prisma.graphql';
+# import MessageThread from '../src/generated/prisma.graphql';
 
 type Query {
   employers(companyName: String): [Employer!]!
@@ -10,6 +11,9 @@ type Query {
 
   # Protected Queries (requires Token)
   internalPostings(customId: String): [Posting!]!
+  internalPostingDetails(id: String!): Posting!
+
+  messageThreads(id: String): [MessageThread!]!
 }
 
 type Mutation {
@@ -42,13 +46,40 @@ type Mutation {
   ): Application!
   
   # Protected Mutations (requires Token)
-  createPosting(postingTitle: String!,
+  createPosting(
+    customId: String!,
+    postingTitle: String!,
     positionTitle: String!,
+    country: String!,
+    city: String,
     employmentType: String!,
     description: String!,
+    minimumSalary: Int,
+    maximumSalary: Int,
+    currency: String,
+    workingHoursFrom: String,
+    workingHoursTo: String,
+    vacationDays: Int,
+    minimumEducation: String,
+    minimumExperience: String,
+    internationalOK: Boolean,
+    hasRelocationAllowance: Boolean,
     requirements: String!,
-    customId: String!,
-    expiresAt: DateTime!,
-    status: PostingStatus): Posting!
+    niceToHave: String,
+    tags: [String!]!,
+    releaseAt: DateTime,
+    expiresAt: DateTime!
+    ): Posting!
+
   releasePosting(customId: String!): String!
+
+  sendApplication(
+    postingId: String!,
+    applicationLetter: String!
+  ): Application
+
+  postMessage(
+    toId: String!
+    message: String!
+  ): MessageThread
 }

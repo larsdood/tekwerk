@@ -5,6 +5,7 @@ const requestsSelector = state => state.requests;
 const employerDataSelector = state => state.employerData;
 const publicDataSelector = state => state.publicData;
 const routerSelector = state => state.router;
+const messageDataSelector = state => state.messageData;
 
 export const tokenSelector = createSelector(
   authSelector,
@@ -17,6 +18,11 @@ export const employerSelector = createSelector(
     ? { name: auth.name, email: auth.email }
     : { }
 );
+
+export const ownUserIdSelector = createSelector(
+  authSelector,
+  auth => auth.id,
+)
 
 export const awaitingResponseSelector = createSelector(
   requestsSelector,
@@ -72,4 +78,28 @@ export const pathnameSelector = createSelector(
 export const postingDetailsSelector = createSelector(
   publicDataSelector,
   publicData => publicData.postingDetails,
+)
+
+export const internalPostingDetailsSelector = createSelector(
+  employerDataSelector,
+  employerData => employerData.postingDetails,
+)
+
+export const numberOfApplicationsSelector = createSelector(
+  employerDataSelector,
+  employerData => employerData && Array.isArray(employerData.postings)
+    ? employerData.postings.reduce((acc, curr) => {
+    return (acc + curr.applications.length)
+  }, 0)
+  : 0
+)
+
+export const messageThreadsSelector = createSelector(
+  messageDataSelector,
+  messageData => messageData.threads,
+)
+
+export const selectedThreadSelector = createSelector(
+  messageDataSelector,
+  messageData => messageData.selectedThread,
 )

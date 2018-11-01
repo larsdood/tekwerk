@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Grid, Card, Header } from 'semantic-ui-react';
-import TopBar from '../Containers/TopBar';
-import PublicPostingCard from '../Components/PublicPostingCard';
-import * as A from '../State/actions';
-import * as S from '../State/selectors';
+import { Grid, Card, Header, Input, Label } from 'semantic-ui-react';
+import PublicPostingCard from '../../Components/PublicPostingCard';
+import * as A from '../../State/actions';
+import * as S from '../../State/selectors';
 
 class CandidateDashboard extends Component {
   constructor(props) {
@@ -18,18 +17,24 @@ class CandidateDashboard extends Component {
     <React.Fragment>
         <Grid columns='12'>
           <Grid.Row>
-
           </Grid.Row>
+          <Grid.Column width='1' />
           <Grid.Column width='4'>
-            Hello
+            <Header as='h5'>Search for jobs</Header>
+            <Input
+              icon={{ name: 'search', link: true }}
+              placeholder='Search...' />
+            <Header as='h5'>Popular tags</Header>
+            <Label>Javascript</Label>
           </Grid.Column>
           <Grid.Column width='10'>
-          <Header>Jobs for you</Header>
+          <Header>Popular Job Postings</Header>
           <Card.Group>
             {this.props.postings.map(posting =>
               <PublicPostingCard posting={posting} key={posting.id} />)}
             </Card.Group>
           </Grid.Column>
+          <Grid.Column width='1' />
         </Grid>
     </React.Fragment>)
   }
